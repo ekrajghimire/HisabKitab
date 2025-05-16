@@ -18,10 +18,13 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code related
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/snippets
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -43,3 +46,43 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase related
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_app_id_file.json
+**/*firebase_options.dart
+firebase-debug.log
+.firebase/
+
+# Fastlane related
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# iOS specific
+**/ios/.generated/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral
+**/ios/ServiceDefinitions.json
+
+# macOS specific
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Flutter version manager
+.fvm/
+
+# mason
+.mason/
