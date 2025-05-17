@@ -10,6 +10,8 @@ import '../../groups/providers/groups_provider.dart';
 import '../../groups/providers/trips_provider.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../trips/screens/trip_detail_screen.dart';
+import '../../../core/widgets/mongodb_status_indicator.dart';
+import '../../settings/screens/mongodb_config_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -138,13 +140,29 @@ class HomeContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'HisabKitab',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'HisabKitab',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MongoDBConfigScreen(),
+                          ),
+                        );
+                      },
+                      child: const MongoDBStatusIndicator(),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 

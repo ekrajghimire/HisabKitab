@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import 'db_setup_screen.dart';
+import 'mongodb_config_screen.dart';
+import 'sync_screen.dart';
+import '../../../core/widgets/mongodb_status_indicator.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -38,6 +41,35 @@ class SettingsScreen extends StatelessWidget {
           const Divider(color: Colors.grey),
 
           // Developer Settings
+          _buildSectionHeader(context, 'Cloud Sync'),
+          _buildSettingTile(
+            context,
+            'MongoDB Configuration',
+            'Set up cloud synchronization',
+            trailing: const MongoDBStatusIndicator(showLabel: false),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MongoDBConfigScreen()),
+              );
+            },
+          ),
+          _buildSettingTile(
+            context,
+            'Sync Data',
+            'Manually sync data with MongoDB',
+            trailing: const Icon(Icons.sync, size: 20, color: Colors.grey),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SyncScreen()),
+              );
+            },
+          ),
+
+          const Divider(color: Colors.grey),
+
+          // Developer Section
           _buildSectionHeader(context, 'Developer'),
           _buildSettingTile(
             context,

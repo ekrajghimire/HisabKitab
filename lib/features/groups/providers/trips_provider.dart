@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/trip_model.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/services/local_storage_service.dart';
+import '../../../core/services/dual_storage_service.dart';
 
 class TripsProvider with ChangeNotifier {
   List<TripModel> _trips = [];
   bool _isLoading = false;
   String? _errorMessage;
+
+  final DualStorageService _storage = DualStorageService.instance;
 
   List<TripModel> get trips => _trips;
   bool get isLoading => _isLoading;
@@ -22,15 +24,12 @@ class TripsProvider with ChangeNotifier {
 
       print('Fetching trips for user: $userId');
 
-      // Get trips from local storage
-      final localTrips = await LocalStorageService.getTripsForUser(userId);
+      // Get trips using dual storage service which handles both local and MongoDB sources
+      final userTrips = await _storage.getTripsForUser(userId);
 
-      print('Trips fetched from local storage: ${localTrips.length}');
+      print('Trips fetched: ${userTrips.length}');
 
-      // Sort by start date (descending)
-      localTrips.sort((a, b) => b.startDate.compareTo(a.startDate));
-
-      _trips = localTrips;
+      _trips = userTrips;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -81,11 +80,11 @@ class TripsProvider with ChangeNotifier {
       // Print the trip data before saving
       print('Trip data: ${newTrip.toMap()}');
 
-      // Save to local storage instead of Firestore
-      final success = await LocalStorageService.saveTrip(newTrip);
+      // Save using dual storage service which handles both local and MongoDB storage
+      final success = await _storage.saveTrip(newTrip);
 
       if (!success) {
-        throw Exception('Failed to save trip to local storage');
+        throw Exception('Failed to save trip');
       }
 
       print('Trip saved successfully with ID: $tripId');
@@ -113,7 +112,7 @@ class TripsProvider with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      await LocalStorageService.clearAllTripsData();
+      await _storage.clearAllTripsData();
 
       _trips = [];
       _isLoading = false;
@@ -122,6 +121,32 @@ class TripsProvider with ChangeNotifier {
     } catch (e) {
       print('Error clearing trips: $e');
       _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Manual sync with MongoDB (can be called from settings)
+  Future<bool> syncWithMongoDB() async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      final success = await _storage.syncWithMongoDB();
+
+      // Refresh trips after sync
+      if (success && _trips.isNotEmpty && _trips.first.createdBy.isNotEmpty) {
+        await fetchUserTrips(_trips.first.createdBy);
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      print('Error syncing with MongoDB: $e');
+      _isLoading = false;
+      _errorMessage = 'Failed to sync with MongoDB: ${e.toString()}';
       notifyListeners();
       return false;
     }
