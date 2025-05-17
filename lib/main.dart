@@ -12,6 +12,7 @@ import 'features/auth/providers/auth_provider.dart';
 import 'features/settings/providers/theme_provider.dart';
 import 'features/groups/providers/groups_provider.dart';
 import 'features/expenses/providers/expenses_provider.dart';
+import 'features/groups/providers/trips_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,7 @@ Future<void> main() async {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(create: (_) => GroupsProvider()),
           ChangeNotifierProvider(create: (_) => ExpensesProvider()),
+          ChangeNotifierProvider(create: (_) => TripsProvider()),
         ],
         child: const MyApp(),
       ),

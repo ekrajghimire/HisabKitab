@@ -9,6 +9,7 @@ class AppConstants {
   static const String groupsCollection = 'groups';
   static const String expensesCollection = 'expenses';
   static const String settlementsCollection = 'settlements';
+  static const String tripsCollection = 'trips';
 
   // Shared preferences keys
   static const String darkModeKey = 'dark_mode';

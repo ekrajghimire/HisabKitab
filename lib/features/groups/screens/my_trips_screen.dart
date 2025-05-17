@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/group_model.dart';
+import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../providers/groups_provider.dart';
+import '../providers/trips_provider.dart';
 import 'create_trip_screen.dart';
-import 'group_details_screen.dart';
+import '../../trips/screens/trip_detail_screen.dart';
 
 class MyTripsScreen extends StatefulWidget {
   const MyTripsScreen({super.key});
@@ -14,8 +14,6 @@ class MyTripsScreen extends StatefulWidget {
 }
 
 class _MyTripsScreenState extends State<MyTripsScreen> {
-  late Future<void> _loadTripsFuture;
-
   @override
   void initState() {
     super.initState();
@@ -27,10 +25,10 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
   Future<void> _loadTrips() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+    final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
 
     if (authProvider.user != null) {
-      await groupsProvider.fetchUserGroups(authProvider.user!.uid);
+      await tripsProvider.fetchUserTrips(authProvider.user!.uid);
     }
   }
 
@@ -52,15 +50,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           ),
         ],
       ),
-      body: Consumer<GroupsProvider>(
-        builder: (context, groupsProvider, child) {
-          if (groupsProvider.isLoading) {
+      body: Consumer<TripsProvider>(
+        builder: (context, tripsProvider, child) {
+          if (tripsProvider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(color: Colors.blue),
             );
           }
 
-          final trips = groupsProvider.groups;
+          final trips = tripsProvider.trips;
 
           if (trips.isEmpty) {
             return _buildEmptyState();
@@ -132,7 +130,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     );
   }
 
-  Widget _buildTripCard(GroupModel trip) {
+  Widget _buildTripCard(TripModel trip) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -144,7 +142,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => GroupDetailsScreen(group: trip),
+              builder: (context) => TripDetailScreen(trip: trip),
             ),
           ).then((_) => _refreshTrips());
         },
@@ -158,8 +156,8 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   CircleAvatar(
                     backgroundColor: Colors.blue.withOpacity(0.2),
                     radius: 24,
-                    child: Icon(
-                      _getIconData(trip.iconName),
+                    child: const Icon(
+                      Icons.card_travel,
                       color: Colors.blue,
                       size: 24,
                     ),
@@ -179,12 +177,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (trip.description != null &&
-                            trip.description!.isNotEmpty)
+                        if (trip.description.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              trip.description!,
+                              trip.description,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(color: Colors.grey.shade400),
@@ -206,7 +203,18 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   Icon(Icons.people, size: 16, color: Colors.grey.shade400),
                   const SizedBox(width: 4),
                   Text(
-                    '${trip.memberIds.length} travelers',
+                    '${trip.members.length} travelers',
+                    style: TextStyle(color: Colors.grey.shade400),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 16,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
                     style: TextStyle(color: Colors.grey.shade400),
                   ),
                 ],
@@ -218,27 +226,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     );
   }
 
-  IconData _getIconData(String? iconName) {
-    if (iconName == null || iconName.isEmpty) {
-      return Icons.beach_access; // Default icon
-    }
-
-    // Map string iconName to IconData
-    final iconMap = {
-      'beach_access': Icons.beach_access,
-      'flight': Icons.flight,
-      'hiking': Icons.hiking,
-      'hotel': Icons.hotel,
-      'restaurant': Icons.restaurant,
-      'local_bar': Icons.local_bar,
-      'train': Icons.train,
-      'directions_car': Icons.directions_car,
-      'camera_alt': Icons.camera_alt,
-      'festival': Icons.festival,
-      'sports_kabaddi': Icons.sports_kabaddi,
-      'movie': Icons.movie,
-    };
-
-    return iconMap[iconName] ?? Icons.beach_access;
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month';
   }
 }

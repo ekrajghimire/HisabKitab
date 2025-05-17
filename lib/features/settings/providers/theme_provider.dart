@@ -17,4 +17,15 @@ class ThemeProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.darkModeKey, _isDarkMode);
   }
+
+  Future<void> setDarkMode(bool value) async {
+    if (_isDarkMode != value) {
+      _isDarkMode = value;
+      notifyListeners();
+
+      // Save the theme preference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.darkModeKey, _isDarkMode);
+    }
+  }
 }

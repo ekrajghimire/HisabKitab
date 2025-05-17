@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
+import '../providers/trips_provider.dart';
+import 'package:intl/intl.dart';
+import '../../trips/screens/trip_detail_screen.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({super.key});
@@ -24,6 +27,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   String? _errorMessage;
   String _selectedIcon = 'beach_access';
   String _selectedCurrency = '₹';
+
+  // Date fields for trip
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now().add(const Duration(days: 7));
 
   // Icons for trips
   final Map<String, IconData> _tripIcons = {
@@ -72,7 +79,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     }
   }
 
-  Future<void> _createGroup() async {
+  Future<void> _createTrip() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() {
         _isLoading = true;
@@ -80,10 +87,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
       });
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final groupsProvider = Provider.of<GroupsProvider>(
-        context,
-        listen: false,
-      );
+      final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
 
       if (authProvider.user == null) {
         setState(() {
@@ -93,52 +97,65 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         return;
       }
 
-      // Process participant names into userIds
-      List<String> additionalMemberIds = [];
-      for (var i = 1; i < _participantControllers.length; i++) {
-        if (_participantControllers[i].text.isNotEmpty) {
-          // In a real app, you'd look up users by email or name
-          // For now, we'll at least track that participants were added
-          additionalMemberIds.add(_participantControllers[i].text.trim());
+      try {
+        // Generate a unique ID for the trip's group
+        final groupId =
+            'group_${DateTime.now().millisecondsSinceEpoch}_${authProvider.user!.uid.substring(0, 5)}';
+
+        // Process participant names into userIds
+        List<String> members = [authProvider.user!.uid]; // Start with creator
+        for (var i = 1; i < _participantControllers.length; i++) {
+          if (_participantControllers[i].text.isNotEmpty) {
+            members.add(_participantControllers[i].text.trim());
+          }
         }
-      }
 
-      final result = await groupsProvider.createGroup(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        creatorId: authProvider.user!.uid,
-        additionalMemberIds: additionalMemberIds,
-        iconName: _selectedIcon,
-        currency: _selectedCurrency,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (result != null) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Trip "${result.name}" created successfully!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        // Create trip directly in local storage
+        final trip = await tripsProvider.createTrip(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          groupId: groupId,
+          createdBy: authProvider.user!.uid,
+          startDate: _startDate,
+          endDate: _endDate,
+          currency: _selectedCurrency,
+          members: members,
         );
 
-        // Allow the snackbar to be visible briefly before navigating
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            Navigator.of(context).pop(result);
-          }
-        });
-      } else {
+        if (!mounted) return;
+
         setState(() {
-          _errorMessage =
-              groupsProvider.errorMessage ?? 'Failed to create trip';
+          _isLoading = false;
         });
+
+        if (trip != null) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Trip "${trip.name}" created successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+
+          // Allow the snackbar to be visible briefly before navigating
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              Navigator.of(context).pop(trip);
+            }
+          });
+        } else {
+          setState(() {
+            _errorMessage =
+                tripsProvider.errorMessage ?? 'Failed to create trip';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error creating trip: ${e.toString()}';
+        });
+        print('Error creating trip: $e');
       }
     }
   }
@@ -159,7 +176,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               _currentStep += 1;
             });
           } else {
-            _createGroup();
+            _createTrip();
           }
         },
         onStepCancel: () {

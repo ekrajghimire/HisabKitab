@@ -5,6 +5,7 @@ import '../../../core/utils/app_utils.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
 import 'create_trip_screen.dart';
+import 'add_trip_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -173,6 +174,16 @@ class _GroupsScreenState extends State<GroupsScreen> {
                     style: TextStyle(color: Colors.grey.shade400),
                   ),
                 ],
+              ),
+              FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddTripScreen(groupId: group.id),
+                    ),
+                  );
+                },
+                child: Icon(Icons.add),
               ),
             ],
           ),

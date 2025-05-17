@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // User document rules
+    match /users/{userId} {
+      // Allow users to read and update their own data
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      // Allow creation if user ID matches auth ID
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Group rules
+    match /groups/{groupId} {
+      // Allow read for group members
+      allow read: if request.auth != null && 
+                   request.auth.uid in resource.data.memberIds;
+      // Allow create if user is authenticated and is listed as creator
+      allow create: if request.auth != null && 
+                     request.auth.uid == request.resource.data.createdBy;
+      // Allow update if user is a member of the group
+      allow update: if request.auth != null && 
+                     request.auth.uid in resource.data.memberIds;
+    }
+    
+    // Trip rules
+    match /trips/{tripId} {
+      // Allow read for trip members
+      allow read: if request.auth != null && 
+                   request.auth.uid in resource.data.members;
+      // Allow create if user is authenticated and is listed as creator
+      allow create: if request.auth != null && 
+                     request.auth.uid == request.resource.data.createdBy;
+      // Allow update if user is a member of the trip
+      allow update: if request.auth != null && 
+                     request.auth.uid in resource.data.members;
+      // Allow delete if user is the creator of the trip
+      allow delete: if request.auth != null && 
+                     request.auth.uid == resource.data.createdBy;
+    }
+    
+    // Expense rules
+    match /expenses/{expenseId} {
+      // Get the group ID from the expense
+      function getGroupId() {
+        return resource.data.groupId;
+      }
+      
+      // Get the group document
+      function getGroup() {
+        return get(/databases/$(database)/documents/groups/$(getGroupId())).data;
+      }
+      
+      // Allow read if user is a member of the associated group
+      allow read: if request.auth != null && 
+                   request.auth.uid in getGroup().memberIds;
+      
+      // Allow create if user is authenticated and a member of the group
+      allow create: if request.auth != null && 
+                     request.auth.uid in get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.memberIds;
+      
+      // Allow update if user is a member of the group
+      allow update: if request.auth != null && 
+                     request.auth.uid in getGroup().memberIds;
+                     
+      // Allow delete if user is the one who paid for the expense or group creator
+      allow delete: if request.auth != null && 
+                     (request.auth.uid == resource.data.paidById || 
+                      request.auth.uid == getGroup().createdBy);
+    }
+  }
+} 

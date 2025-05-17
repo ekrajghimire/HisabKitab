@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/group_model.dart';
+import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../groups/screens/group_details_screen.dart';
 import '../../groups/screens/my_trips_screen.dart';
 import '../../groups/screens/create_trip_screen.dart';
 import '../../groups/providers/groups_provider.dart';
+import '../../groups/providers/trips_provider.dart';
 import '../../profile/screens/profile_screen.dart';
+import '../../trips/screens/trip_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,10 +36,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+    final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
 
     if (authProvider.user != null) {
       // Load user's groups
       await groupsProvider.fetchUserGroups(authProvider.user!.uid);
+
+      // Load user's trips
+      await tripsProvider.fetchUserTrips(authProvider.user!.uid);
     }
   }
 
@@ -64,15 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       _loadUserData();
 
                       // Navigate to the trip details screen
-                      if (result is GroupModel) {
+                      if (result is TripModel) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
-                                (context) => GroupDetailsScreen(
-                                  group: result,
-                                  fromCreation: true,
-                                ),
+                                (context) => TripDetailScreen(trip: result),
                           ),
                         );
                       }
@@ -109,9 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
               'HK',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            label: 'HisabKitab',
+            label: 'Home',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.luggage), label: 'My Trips'),
+          BottomNavigationBarItem(icon: Icon(Icons.luggage), label: 'Trips'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
@@ -124,9 +128,9 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GroupsProvider>(
-      builder: (context, groupsProvider, child) {
-        final trips = groupsProvider.groups;
+    return Consumer<TripsProvider>(
+      builder: (context, tripsProvider, child) {
+        final trips = tripsProvider.trips;
 
         return SafeArea(
           child: Padding(
@@ -184,8 +188,7 @@ class HomeContent extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (context) =>
-                                        GroupDetailsScreen(group: trip),
+                                    (context) => TripDetailScreen(trip: trip),
                               ),
                             );
                           },
@@ -203,7 +206,7 @@ class HomeContent extends StatelessWidget {
 }
 
 class TripCard extends StatelessWidget {
-  final GroupModel trip;
+  final TripModel trip;
   final VoidCallback onTap;
 
   const TripCard({required this.trip, required this.onTap, super.key});
@@ -228,51 +231,48 @@ class TripCard extends StatelessWidget {
                   color: Colors.amber.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  _getIconData(trip.iconName),
+                child: const Icon(
+                  Icons.card_travel,
                   color: Colors.amber,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 16),
-              Text(
-                trip.name,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      trip.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (trip.description.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          trip.description,
+                          style: TextStyle(color: Colors.grey.shade400),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              Text(
+                '${trip.members.length}',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.person, size: 16, color: Colors.grey),
             ],
           ),
         ),
       ),
     );
-  }
-
-  IconData _getIconData(String? iconName) {
-    if (iconName == null || iconName.isEmpty) {
-      return Icons.beach_access; // Default icon
-    }
-
-    // Map string iconName to IconData
-    final iconMap = {
-      'beach_access': Icons.beach_access,
-      'flight': Icons.flight,
-      'hiking': Icons.hiking,
-      'hotel': Icons.hotel,
-      'restaurant': Icons.restaurant,
-      'local_bar': Icons.local_bar,
-      'train': Icons.train,
-      'directions_car': Icons.directions_car,
-      'camera_alt': Icons.camera_alt,
-      'festival': Icons.festival,
-      'sports_kabaddi': Icons.sports_kabaddi,
-      'movie': Icons.movie,
-    };
-
-    return iconMap[iconName] ?? Icons.beach_access;
   }
 }
