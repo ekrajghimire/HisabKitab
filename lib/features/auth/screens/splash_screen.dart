@@ -18,6 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool _isCheckingAuth = true;
 
   @override
   void initState() {
@@ -32,45 +33,98 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
-    _checkAuth();
+
+    // Delayed check to allow animation to play and Firebase to initialize
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _checkAuth();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Listen for auth status changes
+    final authProvider = Provider.of<AuthProvider>(context, listen: true);
+
+    // If auth status changes and we're still on the splash screen
+    if (!_isCheckingAuth) {
+      if (authProvider.status == AuthStatus.authenticated) {
+        _navigateToHome();
+      } else if (authProvider.status == AuthStatus.unauthenticated) {
+        _checkOnboardingStatus();
+      }
+    }
   }
 
   Future<void> _checkAuth() async {
+    setState(() {
+      _isCheckingAuth = true;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool(AppConstants.userLoggedInKey) ?? false;
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
 
     if (isLoggedIn) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // If SharedPreferences says logged in, but waiting for Firebase
+      if (authProvider.status == AuthStatus.initial ||
+          authProvider.status == AuthStatus.loading) {
+        // Give Firebase a little more time to initialize
+        await Future.delayed(const Duration(milliseconds: 1000));
+      }
+
+      // Final check of auth status
       if (authProvider.status == AuthStatus.authenticated) {
         _navigateToHome();
       } else {
-        _navigateToLogin();
+        // If there's a mismatch between shared prefs and Firebase, go to login
+        await prefs.setBool(AppConstants.userLoggedInKey, false);
+        _checkOnboardingStatus();
       }
-    } else if (!hasSeenOnboarding) {
-      _navigateToOnboarding();
     } else {
+      _checkOnboardingStatus();
+    }
+
+    setState(() {
+      _isCheckingAuth = false;
+    });
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+
+    if (!mounted) return;
+
+    if (hasSeenOnboarding) {
       _navigateToLogin();
+    } else {
+      _navigateToOnboarding();
     }
   }
 
   void _navigateToHome() {
+    if (!mounted) return;
+
     Navigator.of(
       context,
     ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   void _navigateToLogin() {
+    if (!mounted) return;
+
     Navigator.of(
       context,
     ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   void _navigateToOnboarding() {
+    if (!mounted) return;
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const OnboardingScreen()),
     );

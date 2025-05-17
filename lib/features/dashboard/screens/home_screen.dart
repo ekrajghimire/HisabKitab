@@ -57,8 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _screens[_currentIndex],
       floatingActionButton:
           _currentIndex == 0
@@ -104,11 +106,12 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _changePage,
-        backgroundColor: const Color(
-          0xFF121212,
-        ), // Slightly lighter than pure black
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.white.withOpacity(0.5),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor:
+            isDarkMode
+                ? Colors.white.withOpacity(0.5)
+                : Colors.black.withOpacity(0.6),
         items: const [
           BottomNavigationBarItem(
             icon: Text(
@@ -130,95 +133,92 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TripsProvider>(
-      builder: (context, tripsProvider, child) {
-        final trips = tripsProvider.trips;
+    final trips = Provider.of<TripsProvider>(context).trips;
 
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'HisabKitab',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MongoDBConfigScreen(),
+                  ),
+                );
+              },
+              child: const MongoDBStatusIndicator(),
+            ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (trips.isEmpty)
+              Center(
+                child: Column(
                   children: [
-                    const Text(
-                      'HisabKitab',
+                    SizedBox(height: 40),
+                    Icon(
+                      Icons.card_travel,
+                      size: 64,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.5),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No trips yet',
                       style: TextStyle(
-                        fontSize: 28,
+                        color: Theme.of(context).colorScheme.onBackground,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                     ),
-                    GestureDetector(
+                    SizedBox(height: 8),
+                    Text(
+                      'Create your first trip using the + button',
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onBackground.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: trips.length,
+                  itemBuilder: (context, index) {
+                    final trip = trips[index];
+                    return TripCard(
+                      trip: trip,
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const MongoDBConfigScreen(),
+                            builder: (context) => TripDetailScreen(trip: trip),
                           ),
                         );
                       },
-                      child: const MongoDBStatusIndicator(),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 16),
-
-                if (trips.isEmpty)
-                  Center(
-                    child: Column(
-                      children: [
-                        SizedBox(height: 40),
-                        Icon(
-                          Icons.card_travel,
-                          size: 64,
-                          color: Colors.blue.withOpacity(0.5),
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No trips yet',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Create your first trip using the + button',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: trips.length,
-                      itemBuilder: (context, index) {
-                        final trip = trips[index];
-                        return TripCard(
-                          trip: trip,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => TripDetailScreen(trip: trip),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -231,9 +231,14 @@ class TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.grey.shade900,
+      color:
+          isDarkMode
+              ? Colors.grey.shade900
+              : Theme.of(context).colorScheme.surface,
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -262,10 +267,10 @@ class TripCard extends StatelessWidget {
                   children: [
                     Text(
                       trip.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     if (trip.description.isNotEmpty)
@@ -273,7 +278,11 @@ class TripCard extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           trip.description,
-                          style: TextStyle(color: Colors.grey.shade400),
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -283,10 +292,18 @@ class TripCard extends StatelessWidget {
               ),
               Text(
                 '${trip.members.length}',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.6),
+                ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.person, size: 16, color: Colors.grey),
+              Icon(
+                Icons.person,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
             ],
           ),
         ),

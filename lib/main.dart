@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -23,6 +24,9 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    // Enable persistence for Firebase Auth
+    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+
     // Initialize FirebaseService
     final firebaseService = await FirebaseService.instance;
     await firebaseService.configureFirestore();
@@ -31,11 +35,14 @@ Future<void> main() async {
     final prefs = await SharedPreferences.getInstance();
     final isDarkMode = prefs.getBool(AppConstants.darkModeKey) ?? true;
 
+    // Create and initialize AuthProvider before app starts
+    final authProvider = AuthProvider();
+
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider(isDarkMode)),
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider.value(value: authProvider),
           ChangeNotifierProvider(create: (_) => GroupsProvider()),
           ChangeNotifierProvider(create: (_) => ExpensesProvider()),
           ChangeNotifierProvider(create: (_) => TripsProvider()),

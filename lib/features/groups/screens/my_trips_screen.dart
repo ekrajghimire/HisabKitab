@@ -38,23 +38,24 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('My Trips', style: TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title: Text('My Trips'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _refreshTrips,
-          ),
+          IconButton(icon: Icon(Icons.refresh), onPressed: _refreshTrips),
         ],
       ),
       body: Consumer<TripsProvider>(
         builder: (context, tripsProvider, child) {
           if (tripsProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.blue),
+            return Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             );
           }
 
@@ -65,8 +66,8 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           }
 
           return RefreshIndicator(
-            color: Colors.blue,
-            backgroundColor: Colors.grey.shade900,
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             onRefresh: _refreshTrips,
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -87,23 +88,31 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.card_travel, size: 80, color: Colors.blue),
+          Icon(
+            Icons.card_travel,
+            size: 80,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           const SizedBox(height: 16),
           Text(
             'No trips yet',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onBackground,
             ),
           ),
           const SizedBox(height: 8),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               'Create your first trip to start tracking expenses',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onBackground.withOpacity(0.7),
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -117,7 +126,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             icon: const Icon(Icons.add),
             label: const Text('Create Trip'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
@@ -131,10 +140,15 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
   }
 
   Widget _buildTripCard(TripModel trip) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.grey.shade900,
+      color:
+          isDarkMode
+              ? Colors.grey.shade900
+              : Theme.of(context).colorScheme.surface,
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -154,11 +168,13 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withOpacity(0.2),
                     radius: 24,
-                    child: const Icon(
+                    child: Icon(
                       Icons.card_travel,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       size: 24,
                     ),
                   ),
@@ -169,10 +185,10 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                       children: [
                         Text(
                           trip.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -184,38 +200,60 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                               trip.description,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.grey.shade400),
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Colors.grey,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Icon(Icons.people, size: 16, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.people,
+                    size: 16,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${trip.members.length} travelers',
-                    style: TextStyle(color: Colors.grey.shade400),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Icon(
                     Icons.calendar_today,
                     size: 16,
-                    color: Colors.grey.shade400,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
-                    style: TextStyle(color: Colors.grey.shade400),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),

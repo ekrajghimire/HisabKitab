@@ -26,18 +26,65 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
   AuthProvider() {
+    // Initialize by checking persistent auth state
+    _initAuthState();
+
     // Listen to auth state changes
     _auth.authStateChanges().listen((User? user) async {
       _user = user;
       if (user != null) {
         await _fetchUserData();
         _status = AuthStatus.authenticated;
+        _saveAuthState(true);
       } else {
         _userModel = null;
         _status = AuthStatus.unauthenticated;
       }
       notifyListeners();
     });
+  }
+
+  // Initialize auth state from SharedPreferences
+  Future<void> _initAuthState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool(AppConstants.userLoggedInKey) ?? false;
+
+      // If user was previously logged in but Firebase doesn't have current user
+      // (e.g., app was force closed), try to restore the session
+      if (isLoggedIn && _auth.currentUser == null) {
+        _status = AuthStatus.loading;
+        notifyListeners();
+
+        // Wait for Firebase to initialize and check again
+        await Future.delayed(const Duration(seconds: 1));
+
+        // If Firebase auth still doesn't have a user but we have a saved state,
+        // we need to clear the saved state as it's out of sync
+        if (_auth.currentUser == null) {
+          await prefs.setBool(AppConstants.userLoggedInKey, false);
+          _status = AuthStatus.unauthenticated;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing auth state: $e');
+    }
+  }
+
+  // Save auth state to SharedPreferences
+  Future<void> _saveAuthState(bool isLoggedIn) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(AppConstants.userLoggedInKey, isLoggedIn);
+      if (isLoggedIn && _user != null) {
+        await prefs.setString(AppConstants.userIdKey, _user!.uid);
+      } else {
+        await prefs.remove(AppConstants.userIdKey);
+      }
+    } catch (e) {
+      debugPrint('Error saving auth state: $e');
+    }
   }
 
   Future<void> _fetchUserData() async {
@@ -69,9 +116,7 @@ class AuthProvider with ChangeNotifier {
         password: password,
       );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(AppConstants.userLoggedInKey, true);
-
+      await _saveAuthState(true);
       return true;
     } catch (e) {
       _status = AuthStatus.unauthenticated;
@@ -142,9 +187,7 @@ class AuthProvider with ChangeNotifier {
               .set(newUser.toMap());
         }
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(AppConstants.userLoggedInKey, true);
-
+        await _saveAuthState(true);
         return true;
       }
 
@@ -190,9 +233,7 @@ class AuthProvider with ChangeNotifier {
 
         _userModel = newUser;
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(AppConstants.userLoggedInKey, true);
-
+        await _saveAuthState(true);
         return true;
       }
 
@@ -214,9 +255,7 @@ class AuthProvider with ChangeNotifier {
         await _googleSignIn.signOut();
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(AppConstants.userLoggedInKey, false);
-
+      await _saveAuthState(false);
       return true;
     } catch (e) {
       _errorMessage = 'Failed to sign out: ${e.toString()}';
