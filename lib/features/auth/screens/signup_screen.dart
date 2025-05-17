@@ -61,7 +61,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final isLoading = authProvider.status == AuthStatus.loading;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SafeArea(
         child: Center(

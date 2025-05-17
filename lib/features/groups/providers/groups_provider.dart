@@ -49,6 +49,8 @@ class GroupsProvider with ChangeNotifier {
     String? description,
     required String creatorId,
     List<String>? additionalMemberIds,
+    String? iconName,
+    required String currency,
   }) async {
     try {
       _isLoading = true;
@@ -63,7 +65,11 @@ class GroupsProvider with ChangeNotifier {
 
       // Add additional members if provided
       if (additionalMemberIds != null && additionalMemberIds.isNotEmpty) {
-        memberIds.addAll(additionalMemberIds);
+        for (final memberId in additionalMemberIds) {
+          if (!memberIds.contains(memberId)) {
+            memberIds.add(memberId);
+          }
+        }
       }
 
       final newGroup = GroupModel(
@@ -73,6 +79,8 @@ class GroupsProvider with ChangeNotifier {
         creatorId: creatorId,
         memberIds: memberIds,
         imageUrl: null,
+        iconName: iconName,
+        currency: currency,
         createdAt: now,
         updatedAt: now,
       );
@@ -83,14 +91,13 @@ class GroupsProvider with ChangeNotifier {
           .set(newGroup.toMap());
 
       // Update user documents to include this group
-      for (final memberId in memberIds) {
-        await _firestore
-            .collection(AppConstants.usersCollection)
-            .doc(memberId)
-            .update({
-              'groupIds': FieldValue.arrayUnion([groupId]),
-            });
-      }
+      // Only update for the creator as other "members" may just be names at this point
+      await _firestore
+          .collection(AppConstants.usersCollection)
+          .doc(creatorId)
+          .update({
+            'groupIds': FieldValue.arrayUnion([groupId]),
+          });
 
       _groups.add(newGroup);
       _isLoading = false;

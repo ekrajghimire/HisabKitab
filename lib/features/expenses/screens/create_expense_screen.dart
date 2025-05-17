@@ -28,10 +28,12 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
 
   final List<String> _categories = [
     'Food',
+    'Drinks',
     'Transport',
     'Accommodation',
     'Entertainment',
     'Shopping',
+    'Code',
     'Other',
   ];
 
@@ -57,8 +59,7 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
               onPrimary: Colors.white,
               surface: Color(0xFF303030),
               onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: Colors.grey.shade900,
+            ), dialogTheme: DialogThemeData(backgroundColor: Colors.grey.shade900),
           ),
           child: child!,
         );

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../../models/expense_model.dart';
-import '../../../core/utils/app_utils.dart';
+import '../../../core/services/user_service.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../screens/expense_details_screen.dart';
 
 class ExpenseListItem extends StatelessWidget {
   final ExpenseModel expense;
@@ -13,6 +16,8 @@ class ExpenseListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(symbol: '\$');
     final dateFormat = DateFormat('MMM d, yyyy');
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isPaidByCurrentUser = expense.paidById == authProvider.user?.uid;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -21,7 +26,16 @@ class ExpenseListItem extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
+        onTap:
+            onTap ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExpenseDetailsScreen(expense: expense),
+                ),
+              );
+            },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -86,9 +100,23 @@ class ExpenseListItem extends StatelessWidget {
                     dateFormat.format(expense.date),
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
                   ),
-                  Text(
-                    'Paid by You', // Will be replaced with actual user name later
-                    style: TextStyle(color: Colors.blue.shade300, fontSize: 12),
+                  FutureBuilder<String>(
+                    future: _getPaidByText(
+                      expense.paidById,
+                      isPaidByCurrentUser,
+                    ),
+                    builder: (context, snapshot) {
+                      return Text(
+                        snapshot.data ??
+                            (isPaidByCurrentUser
+                                ? 'Paid by You'
+                                : 'Paid by...'),
+                        style: TextStyle(
+                          color: Colors.blue.shade300,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -120,6 +148,18 @@ class ExpenseListItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<String> _getPaidByText(
+    String paidById,
+    bool isPaidByCurrentUser,
+  ) async {
+    if (isPaidByCurrentUser) {
+      return 'Paid by You';
+    }
+
+    final userName = await UserService().getUserDisplayName(paidById);
+    return 'Paid by $userName';
   }
 
   Widget _buildCategoryIcon(String? category) {

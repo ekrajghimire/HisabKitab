@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../models/group_model.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_utils.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
-import 'create_group_screen.dart';
+import 'create_trip_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -39,7 +37,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   void _navigateToCreateGroup() async {
     final result = await Navigator.of(context).push<GroupModel>(
-      MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+      MaterialPageRoute(builder: (_) => const CreateTripScreen()),
     );
 
     if (result != null) {

@@ -43,6 +43,8 @@ class GroupModel {
   final String creatorId;
   final List<String> memberIds;
   final String? imageUrl;
+  final String? iconName;
+  final String currency;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -53,6 +55,8 @@ class GroupModel {
     required this.creatorId,
     required this.memberIds,
     this.imageUrl,
+    this.iconName,
+    required this.currency,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -64,6 +68,8 @@ class GroupModel {
     String? creatorId,
     List<String>? memberIds,
     String? imageUrl,
+    String? iconName,
+    String? currency,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -74,6 +80,8 @@ class GroupModel {
       creatorId: creatorId ?? this.creatorId,
       memberIds: memberIds ?? this.memberIds,
       imageUrl: imageUrl ?? this.imageUrl,
+      iconName: iconName ?? this.iconName,
+      currency: currency ?? this.currency,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -87,6 +95,8 @@ class GroupModel {
       'creatorId': creatorId,
       'memberIds': memberIds,
       'imageUrl': imageUrl,
+      'iconName': iconName,
+      'currency': currency,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
     };
@@ -100,6 +110,8 @@ class GroupModel {
       creatorId: map['creatorId'] ?? '',
       memberIds: List<String>.from(map['memberIds'] ?? []),
       imageUrl: map['imageUrl'],
+      iconName: map['iconName'],
+      currency: map['currency'] ?? '₹',
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
     );
@@ -112,7 +124,7 @@ class GroupModel {
 
   @override
   String toString() {
-    return 'GroupModel(id: $id, name: $name, description: $description, creatorId: $creatorId, memberIds: $memberIds, imageUrl: $imageUrl, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'GroupModel(id: $id, name: $name, description: $description, creatorId: $creatorId, memberIds: $memberIds, imageUrl: $imageUrl, iconName: $iconName, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -125,6 +137,7 @@ class GroupModel {
         other.description == description &&
         other.creatorId == creatorId &&
         other.imageUrl == imageUrl &&
+        other.iconName == iconName &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -136,6 +149,7 @@ class GroupModel {
         description.hashCode ^
         creatorId.hashCode ^
         imageUrl.hashCode ^
+        iconName.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode;
   }

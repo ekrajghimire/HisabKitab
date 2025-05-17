@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../models/group_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
-import 'create_group_screen.dart';
+import 'create_trip_screen.dart';
 import 'group_details_screen.dart';
 
 class MyTripsScreen extends StatefulWidget {
@@ -115,7 +113,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CreateGroupScreen()),
+                MaterialPageRoute(builder: (_) => const CreateTripScreen()),
               ).then((_) => _refreshTrips());
             },
             icon: const Icon(Icons.add),
@@ -160,13 +158,10 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   CircleAvatar(
                     backgroundColor: Colors.blue.withOpacity(0.2),
                     radius: 24,
-                    child: Text(
-                      trip.name.isNotEmpty ? trip.name[0].toUpperCase() : '?',
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                    child: Icon(
+                      _getIconData(trip.iconName),
+                      color: Colors.blue,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -221,5 +216,29 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
         ),
       ),
     );
+  }
+
+  IconData _getIconData(String? iconName) {
+    if (iconName == null || iconName.isEmpty) {
+      return Icons.beach_access; // Default icon
+    }
+
+    // Map string iconName to IconData
+    final iconMap = {
+      'beach_access': Icons.beach_access,
+      'flight': Icons.flight,
+      'hiking': Icons.hiking,
+      'hotel': Icons.hotel,
+      'restaurant': Icons.restaurant,
+      'local_bar': Icons.local_bar,
+      'train': Icons.train,
+      'directions_car': Icons.directions_car,
+      'camera_alt': Icons.camera_alt,
+      'festival': Icons.festival,
+      'sports_kabaddi': Icons.sports_kabaddi,
+      'movie': Icons.movie,
+    };
+
+    return iconMap[iconName] ?? Icons.beach_access;
   }
 }

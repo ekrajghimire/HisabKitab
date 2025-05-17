@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../core/constants/app_constants.dart';
-import '../providers/expenses_provider.dart';
 
 class RecentExpensesScreen extends StatelessWidget {
   const RecentExpensesScreen({super.key});

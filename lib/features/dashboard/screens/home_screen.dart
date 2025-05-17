@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../models/group_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../groups/screens/groups_screen.dart';
+import '../../groups/screens/group_details_screen.dart';
 import '../../groups/screens/my_trips_screen.dart';
-import '../../groups/screens/create_group_screen.dart';
+import '../../groups/screens/create_trip_screen.dart';
+import '../../groups/providers/groups_provider.dart';
 import '../../profile/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -32,9 +32,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserData() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.userModel == null) {
-      // This is a placeholder for future implementation
-      // We'll need to fetch user data and groups here
+    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+
+    if (authProvider.user != null) {
+      // Load user's groups
+      await groupsProvider.fetchUserGroups(authProvider.user!.uid);
     }
   }
 
@@ -55,10 +57,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateGroupScreen(),
-                    ),
-                  );
+                    MaterialPageRoute(builder: (_) => const CreateTripScreen()),
+                  ).then((result) {
+                    if (result != null) {
+                      // Refresh the trips list
+                      _loadUserData();
+
+                      // Navigate to the trip details screen
+                      if (result is GroupModel) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => GroupDetailsScreen(
+                                  group: result,
+                                  fromCreation: true,
+                                ),
+                          ),
+                        );
+                      }
+                    }
+                  });
                 },
                 backgroundColor: const Color(
                   0xFF003366,
@@ -105,46 +124,89 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'HisabKitab',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+    return Consumer<GroupsProvider>(
+      builder: (context, groupsProvider, child) {
+        final trips = groupsProvider.groups;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'HisabKitab',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                if (trips.isEmpty)
+                  Center(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 40),
+                        Icon(
+                          Icons.card_travel,
+                          size: 64,
+                          color: Colors.blue.withOpacity(0.5),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No trips yet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Create your first trip using the + button',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: trips.length,
+                      itemBuilder: (context, index) {
+                        final trip = trips[index];
+                        return TripCard(
+                          trip: trip,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        GroupDetailsScreen(group: trip),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TripCard(
-              title: 'Hampi',
-              icon: '🏖️',
-              onTap: () {
-                // Navigate to trip details
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
 class TripCard extends StatelessWidget {
-  final String title;
-  final String icon;
+  final GroupModel trip;
   final VoidCallback onTap;
 
-  const TripCard({
-    required this.title,
-    required this.icon,
-    required this.onTap,
-    super.key,
-  });
+  const TripCard({required this.trip, required this.onTap, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +214,7 @@ class TripCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: Colors.grey.shade900,
       elevation: 2,
-      margin: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
@@ -160,10 +222,21 @@ class TripCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 24)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getIconData(trip.iconName),
+                  color: Colors.amber,
+                  size: 24,
+                ),
+              ),
               const SizedBox(width: 16),
               Text(
-                title,
+                trip.name,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -177,5 +250,29 @@ class TripCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _getIconData(String? iconName) {
+    if (iconName == null || iconName.isEmpty) {
+      return Icons.beach_access; // Default icon
+    }
+
+    // Map string iconName to IconData
+    final iconMap = {
+      'beach_access': Icons.beach_access,
+      'flight': Icons.flight,
+      'hiking': Icons.hiking,
+      'hotel': Icons.hotel,
+      'restaurant': Icons.restaurant,
+      'local_bar': Icons.local_bar,
+      'train': Icons.train,
+      'directions_car': Icons.directions_car,
+      'camera_alt': Icons.camera_alt,
+      'festival': Icons.festival,
+      'sports_kabaddi': Icons.sports_kabaddi,
+      'movie': Icons.movie,
+    };
+
+    return iconMap[iconName] ?? Icons.beach_access;
   }
 }

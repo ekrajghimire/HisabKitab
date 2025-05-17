@@ -7,7 +7,7 @@ import '../../../models/expense_model.dart';
 class ExpensesProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Map<String, List<ExpenseModel>> _groupExpenses = {};
+  final Map<String, List<ExpenseModel>> _groupExpenses = {};
   String? _errorMessage;
   bool _isLoading = false;
 
