@@ -118,7 +118,7 @@ class TripModel {
       );
     } catch (e) {
       print('Error creating TripModel: $e');
-      throw e;
+      rethrow;
     }
   }
 

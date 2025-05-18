@@ -7,10 +7,10 @@ class MongoDBStatusIndicator extends StatefulWidget {
   final bool showConnectionString;
 
   const MongoDBStatusIndicator({
-    Key? key,
+    super.key,
     this.showLabel = true,
     this.showConnectionString = false,
-  }) : super(key: key);
+  });
 
   @override
   State<MongoDBStatusIndicator> createState() => _MongoDBStatusIndicatorState();
@@ -121,7 +121,7 @@ class _MongoDBStatusIndicatorState extends State<MongoDBStatusIndicator> {
               strokeWidth: 2,
               color: Theme.of(
                 context,
-              ).colorScheme.onBackground.withOpacity(0.5),
+              ).colorScheme.onSurface.withOpacity(0.5),
             ),
           ),
           if (widget.showLabel) ...[
@@ -132,7 +132,7 @@ class _MongoDBStatusIndicatorState extends State<MongoDBStatusIndicator> {
                 fontSize: 12,
                 color: Theme.of(
                   context,
-                ).colorScheme.onBackground.withOpacity(0.5),
+                ).colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
           ],
@@ -164,7 +164,7 @@ class _MongoDBStatusIndicatorState extends State<MongoDBStatusIndicator> {
                   fontSize: 12,
                   color:
                       _isConnected
-                          ? Theme.of(context).colorScheme.onBackground
+                          ? Theme.of(context).colorScheme.onSurface
                           : Theme.of(context).colorScheme.error,
                 ),
               ),
@@ -177,7 +177,7 @@ class _MongoDBStatusIndicatorState extends State<MongoDBStatusIndicator> {
                   fontSize: 12,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onBackground.withOpacity(0.7),
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -190,7 +190,7 @@ class _MongoDBStatusIndicatorState extends State<MongoDBStatusIndicator> {
                     fontSize: 12,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onBackground.withOpacity(0.7),
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

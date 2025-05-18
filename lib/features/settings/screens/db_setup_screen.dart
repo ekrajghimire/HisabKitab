@@ -7,7 +7,7 @@ import '../../groups/providers/groups_provider.dart';
 import '../../groups/providers/trips_provider.dart';
 
 class DbSetupScreen extends StatefulWidget {
-  const DbSetupScreen({Key? key}) : super(key: key);
+  const DbSetupScreen({super.key});
 
   @override
   _DbSetupScreenState createState() => _DbSetupScreenState();

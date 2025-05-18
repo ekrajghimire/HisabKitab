@@ -29,8 +29,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   String _selectedCurrency = '₹';
 
   // Date fields for trip
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 7));
+  final DateTime _startDate = DateTime.now();
+  final DateTime _endDate = DateTime.now().add(const Duration(days: 7));
 
   // Icons for trips
   final Map<String, IconData> _tripIcons = {

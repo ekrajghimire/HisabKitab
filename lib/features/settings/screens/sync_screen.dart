@@ -4,7 +4,7 @@ import '../../../core/widgets/mongodb_status_indicator.dart';
 import 'dart:async';
 
 class SyncScreen extends StatefulWidget {
-  const SyncScreen({Key? key}) : super(key: key);
+  const SyncScreen({super.key});
 
   @override
   _SyncScreenState createState() => _SyncScreenState();

@@ -54,6 +54,11 @@ app.*.map.json
 **/*firebase_options.dart
 firebase-debug.log
 .firebase/
+firebase-export-*/
+firestore-debug.log
+ui-debug.log
+pubsub-debug.log
+**/node_modules/
 
 # Fastlane related
 **/fastlane/report.xml
@@ -69,10 +74,12 @@ firebase-debug.log
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/ephemeral
 **/ios/ServiceDefinitions.json
+**/ios/Pods/
 
 # macOS specific
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/ephemeral
+**/macos/Pods/
 
 # Coverage
 coverage/
@@ -80,9 +87,20 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+.env
+.env.local
+*.env.*
 
 # Flutter version manager
 .fvm/
 
 # mason
 .mason/
+
+# Local development
+local.properties
+local.settings.json
+
+# Generated files
+*.g.dart
+*.freezed.dart

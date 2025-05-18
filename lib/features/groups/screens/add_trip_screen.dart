@@ -9,7 +9,7 @@ import '../../trips/screens/trip_detail_screen.dart';
 class AddTripScreen extends StatefulWidget {
   final String groupId;
 
-  const AddTripScreen({Key? key, required this.groupId}) : super(key: key);
+  const AddTripScreen({super.key, required this.groupId});
 
   @override
   _AddTripScreenState createState() => _AddTripScreenState();
@@ -98,7 +98,7 @@ class _AddTripScreenState extends State<AddTripScreen> {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${_error}'),
+            content: Text('Error: $_error'),
             backgroundColor: Colors.red,
           ),
         );

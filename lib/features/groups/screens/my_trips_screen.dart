@@ -99,7 +99,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onBackground,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -111,7 +111,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
               style: TextStyle(
                 color: Theme.of(
                   context,
-                ).colorScheme.onBackground.withOpacity(0.7),
+                ).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ),

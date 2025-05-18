@@ -9,7 +9,7 @@ import '../../expenses/providers/expenses_provider.dart';
 class TripDetailScreen extends StatefulWidget {
   final TripModel trip;
 
-  const TripDetailScreen({Key? key, required this.trip}) : super(key: key);
+  const TripDetailScreen({super.key, required this.trip});
 
   @override
   _TripDetailScreenState createState() => _TripDetailScreenState();
@@ -232,7 +232,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
               ),
             ),
-            ...expenses.map((expense) => _buildExpenseItem(expense)).toList(),
+            ...expenses.map((expense) => _buildExpenseItem(expense)),
           ],
         );
       },

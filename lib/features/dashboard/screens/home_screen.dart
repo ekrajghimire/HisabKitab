@@ -179,7 +179,7 @@ class HomeContent extends StatelessWidget {
                     Text(
                       'No trips yet',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -190,7 +190,7 @@ class HomeContent extends StatelessWidget {
                       style: TextStyle(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onBackground.withOpacity(0.6),
+                        ).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],

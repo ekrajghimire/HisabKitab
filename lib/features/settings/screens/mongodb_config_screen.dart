@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/mongo_db_service.dart';
 
 class MongoDBConfigScreen extends StatefulWidget {
-  const MongoDBConfigScreen({Key? key}) : super(key: key);
+  const MongoDBConfigScreen({super.key});
 
   @override
   _MongoDBConfigScreenState createState() => _MongoDBConfigScreenState();
@@ -176,7 +176,7 @@ class _MongoDBConfigScreenState extends State<MongoDBConfigScreen> {
                                   color:
                                       Theme.of(
                                         context,
-                                      ).colorScheme.surfaceVariant,
+                                      ).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(

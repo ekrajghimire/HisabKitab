@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/trip_model.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../core/services/dual_storage_service.dart';
 
 class TripsProvider with ChangeNotifier {

@@ -354,7 +354,7 @@ class DualStorageService {
         final progress = 50 + ((processed / totalItems) * 40);
         yield SyncStatus(
           isComplete: false,
-          message: 'Syncing trip ${processed}/${totalItems}...',
+          message: 'Syncing trip $processed/$totalItems...',
           success: true,
           progress: progress.toInt(),
         );
