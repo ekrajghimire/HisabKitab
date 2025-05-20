@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:flutter/foundation.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -25,7 +26,9 @@ Future<void> main() async {
     );
 
     // Enable persistence for Firebase Auth
-    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    if (kIsWeb) {
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    }
 
     // Initialize FirebaseService
     final firebaseService = await FirebaseService.instance;

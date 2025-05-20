@@ -36,10 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # Firebase
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.18.0
-  cloud_firestore: ^4.15.5
-  firebase_storage: ^11.6.6
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  cloud_firestore: ^5.6.7
+  firebase_storage: ^12.4.5
   google_sign_in: ^6.2.1
   
   # State Management
@@ -61,7 +61,6 @@ dependencies:
   shared_preferences: ^2.2.2
   uuid: ^4.3.3
   camera: ^0.10.5+9
-  google_ml_kit: ^0.16.3
   pdf: ^3.10.7
   csv: ^5.1.1
   permission_handler: ^11.3.0
