@@ -13,6 +13,7 @@ class TripModel {
   final List<String> members;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String icon;
 
   TripModel({
     required this.id,
@@ -26,6 +27,7 @@ class TripModel {
     required this.members,
     required this.createdAt,
     required this.updatedAt,
+    this.icon = 'luggage',
   });
 
   // Convert to Map for Firestore or local storage
@@ -43,6 +45,7 @@ class TripModel {
       'members': members,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'icon': icon,
     };
   }
 
@@ -72,6 +75,7 @@ class TripModel {
       final String groupId = map['groupId'] ?? '';
       final String createdBy = map['createdBy'] ?? '';
       final String currency = map['currency'] ?? 'USD';
+      final String icon = map['icon'] ?? 'luggage';
 
       // Parse dates
       DateTime startDate;
@@ -115,6 +119,7 @@ class TripModel {
         members: members,
         createdAt: createdAt,
         updatedAt: updatedAt,
+        icon: icon,
       );
     } catch (e) {
       print('Error creating TripModel: $e');

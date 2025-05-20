@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../providers/groups_provider.dart';
 import '../providers/trips_provider.dart';
-import 'package:intl/intl.dart';
-import '../../trips/screens/trip_detail_screen.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({super.key});
@@ -25,28 +22,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
-  String _selectedIcon = 'beach_access';
   String _selectedCurrency = '₹';
 
   // Date fields for trip
   final DateTime _startDate = DateTime.now();
   final DateTime _endDate = DateTime.now().add(const Duration(days: 7));
-
-  // Icons for trips
-  final Map<String, IconData> _tripIcons = {
-    'beach_access': Icons.beach_access,
-    'flight': Icons.flight,
-    'hiking': Icons.hiking,
-    'hotel': Icons.hotel,
-    'restaurant': Icons.restaurant,
-    'local_bar': Icons.local_bar,
-    'train': Icons.train,
-    'directions_car': Icons.directions_car,
-    'camera_alt': Icons.camera_alt,
-    'festival': Icons.festival,
-    'sports_kabaddi': Icons.sports_kabaddi,
-    'movie': Icons.movie,
-  };
 
   // Supported currencies
   final List<String> _currencies = ['₹', '\$', '€', '£', '¥'];
@@ -249,10 +229,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           ),
           Step(
             title: const Text(
-              'Select Icon & Currency',
+              'Select Currency',
               style: TextStyle(color: Colors.white),
             ),
-            content: _buildIconCurrencySelectionForm(),
+            content: _buildCurrencySelectionForm(),
             isActive: _currentStep >= 1,
           ),
           Step(
@@ -348,83 +328,10 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     );
   }
 
-  Widget _buildIconCurrencySelectionForm() {
+  Widget _buildCurrencySelectionForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Icon selection
-        Text(
-          'Select an icon for your trip',
-          style: TextStyle(color: Colors.grey.shade300),
-        ),
-        const SizedBox(height: 12),
-        Center(
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _tripIcons[_selectedIcon] ?? Icons.travel_explore,
-                  size: 50,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 100,
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 6,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _tripIcons.length,
-                  itemBuilder: (context, index) {
-                    final iconName = _tripIcons.keys.elementAt(index);
-                    final iconData = _tripIcons[iconName]!;
-                    final isSelected = iconName == _selectedIcon;
-
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedIcon = iconName;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? Colors.blue.withOpacity(0.2)
-                                  : Colors.grey.shade800,
-                          borderRadius: BorderRadius.circular(8),
-                          border:
-                              isSelected
-                                  ? Border.all(color: Colors.blue, width: 2)
-                                  : null,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            iconData,
-                            color: isSelected ? Colors.blue : Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
         // Currency selection
         Text(
           'Select a currency for your trip',
@@ -544,82 +451,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  void _showIconPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.grey.shade900,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SizedBox(
-          height: 400,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text(
-                  'Select Trip Icon',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: _tripIcons.length,
-                  itemBuilder: (context, index) {
-                    final iconName = _tripIcons.keys.elementAt(index);
-                    final iconData = _tripIcons[iconName]!;
-                    final isSelected = iconName == _selectedIcon;
-
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedIcon = iconName;
-                        });
-                        Navigator.pop(context);
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? Colors.blue.withOpacity(0.2)
-                                  : Colors.grey.shade800,
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                              isSelected
-                                  ? Border.all(color: Colors.blue, width: 2)
-                                  : null,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            iconData,
-                            color: isSelected ? Colors.blue : Colors.white,
-                            size: 36,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

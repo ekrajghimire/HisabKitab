@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/group_model.dart';
 import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../groups/screens/group_details_screen.dart';
 import '../../groups/screens/my_trips_screen.dart';
 import '../../groups/screens/create_trip_screen.dart';
 import '../../groups/providers/groups_provider.dart';
@@ -12,6 +10,7 @@ import '../../profile/screens/profile_screen.dart';
 import '../../trips/screens/trip_detail_screen.dart';
 import '../../../core/widgets/mongodb_status_indicator.dart';
 import '../../settings/screens/mongodb_config_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,20 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   });
                 },
-                backgroundColor: const Color(
-                  0xFF003366,
-                ), // Dark blue background
-                shape: CircleBorder(
-                  side: BorderSide(
-                    color: Colors.blue,
-                    width: 2.0,
-                  ), // Light blue border
-                ),
-                child: const Icon(
-                  Icons.add,
-                  color: Colors.blue, // Light blue plus icon
-                  size: 36,
-                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: const Icon(Icons.add, color: Colors.white, size: 32),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(
@@ -109,9 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor:
-            isDarkMode
-                ? Colors.white.withOpacity(0.5)
-                : Colors.black.withOpacity(0.6),
+            isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+        elevation: 8,
         items: const [
           BottomNavigationBarItem(
             icon: Text(
@@ -166,32 +152,37 @@ class HomeContent extends StatelessWidget {
             if (trips.isEmpty)
               Center(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(height: 40),
-                    Icon(
-                      Icons.card_travel,
-                      size: 64,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.5),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'No trips yet',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Create your first trip using the + button',
-                      style: TextStyle(
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.6),
+                        ).colorScheme.primary.withOpacity(0.1),
+                        shape: BoxShape.circle,
                       ),
+                      child: Icon(
+                        Icons.card_travel,
+                        size: 64,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'No trips yet',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Create your first trip using the + button',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -234,80 +225,133 @@ class TripCard extends StatelessWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color:
           isDarkMode
-              ? Colors.grey.shade900
+              ? Theme.of(context).colorScheme.surface
               : Theme.of(context).colorScheme.surface,
       elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Row(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.card_travel,
-                  color: Colors.amber,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.name,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    if (trip.description.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          trip.description,
-                          style: TextStyle(
+                    child: Icon(
+                      _getTripIcon(trip.icon),
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.name,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('EEEE, MMMM d, y').format(trip.createdAt),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(
                               context,
                             ).colorScheme.onSurface.withOpacity(0.7),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ],
+              ),
+              if (trip.description != null && trip.description!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  trip.description!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                '${trip.members.length}',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.person,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
+              ],
             ],
           ),
         ),
       ),
     );
+  }
+
+  IconData _getTripIcon(String iconName) {
+    switch (iconName.toLowerCase()) {
+      case 'beach':
+        return Icons.beach_access;
+      case 'mountain':
+        return Icons.landscape;
+      case 'city':
+        return Icons.location_city;
+      case 'food':
+        return Icons.restaurant;
+      case 'shopping':
+        return Icons.shopping_bag;
+      case 'business':
+        return Icons.business;
+      case 'family':
+        return Icons.family_restroom;
+      case 'friends':
+        return Icons.group;
+      case 'camping':
+        return Icons.forest;
+      case 'hiking':
+        return Icons.hiking;
+      case 'sports':
+        return Icons.sports;
+      case 'music':
+        return Icons.music_note;
+      case 'art':
+        return Icons.palette;
+      case 'education':
+        return Icons.school;
+      case 'health':
+        return Icons.health_and_safety;
+      case 'wedding':
+        return Icons.favorite;
+      case 'birthday':
+        return Icons.cake;
+      case 'concert':
+        return Icons.theater_comedy;
+      case 'movie':
+        return Icons.movie;
+      case 'gaming':
+        return Icons.sports_esports;
+      default:
+        return Icons.luggage;
+    }
   }
 }

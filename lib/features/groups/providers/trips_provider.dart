@@ -49,6 +49,7 @@ class TripsProvider with ChangeNotifier {
     required DateTime endDate,
     required String currency,
     required List<String> members,
+    String? icon,
   }) async {
     try {
       _isLoading = true;
@@ -74,6 +75,7 @@ class TripsProvider with ChangeNotifier {
         members: members,
         createdAt: now,
         updatedAt: now,
+        icon: icon ?? 'luggage',
       );
 
       // Print the trip data before saving

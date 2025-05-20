@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/trips_provider.dart';
 import '../../trips/screens/trip_detail_screen.dart';

@@ -79,39 +79,68 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.trip.name),
-        backgroundColor: Colors.black,
-        elevation: 0,
-      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: Text(widget.trip.name), elevation: 0),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : Column(
                 children: [
                   // Tabs
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade900,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicator: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color:
+                            isDarkMode
+                                ? Theme.of(context).colorScheme.surface
+                                : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      tabs: const [
-                        Tab(text: 'Expenses'),
-                        Tab(text: 'Balances'),
-                      ],
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        labelColor: Colors.white,
+                        unselectedLabelColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.7),
+                        labelStyle: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                        unselectedLabelStyle: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w500),
+                        tabs: const [
+                          Tab(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                'Expenses',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          Tab(
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                'Balances',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Expense totals
                   Padding(
@@ -119,45 +148,21 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'My Expenses',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Text(
-                              '₹${_myExpensesTotal.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                        _buildTotalCard(
+                          'My Expenses',
+                          '₹${_myExpensesTotal.toStringAsFixed(2)}',
+                          Theme.of(context).colorScheme.primary,
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              'Total Expenses',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Text(
-                              '₹${_totalExpenses.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                        _buildTotalCard(
+                          'Total Expenses',
+                          '₹${_totalExpenses.toStringAsFixed(2)}',
+                          Theme.of(context).colorScheme.secondary,
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Tab content
                   Expanded(
@@ -168,12 +173,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                         _buildExpensesTab(),
 
                         // Balances tab
-                        Center(
-                          child: Text(
-                            'Balances Coming Soon',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
+                        _buildBalancesTab(),
                       ],
                     ),
                   ),
@@ -183,10 +183,39 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         onPressed: () {
           // TODO: Navigate to add expense screen
         },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildTotalCard(String title, String amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            amount,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -197,10 +226,31 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           ..sort((a, b) => b.compareTo(a)); // Sort by most recent
 
     if (groupedExpenses.isEmpty) {
-      return const Center(
-        child: Text(
-          'No expenses yet. Add your first expense!',
-          style: TextStyle(color: Colors.grey),
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.receipt_long,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No expenses yet',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add your first expense using the + button',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       );
     }
@@ -225,10 +275,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                     : isYesterday
                     ? 'Yesterday'
                     : DateFormat('MMMM d, y').format(date),
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),
@@ -240,76 +289,98 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Widget _buildExpenseItem(ExpenseModel expense) {
-    // Find the emoji for the category
-    String emoji = '💰'; // Default
-    if (expense.category != null) {
-      switch (expense.category) {
-        case 'Food':
-          emoji = '🍔';
-          break;
-        case 'Drinks':
-          emoji = '🥂';
-          break;
-        case 'Transportation':
-          emoji = '🚕';
-          break;
-        case 'Accommodation':
-          emoji = '🏨';
-          break;
-        case 'Activities':
-          emoji = '🏄‍♂️';
-          break;
-        case 'Shopping':
-          emoji = '🛍️';
-          break;
-        case 'Code':
-          emoji = '💻';
-          break;
-      }
-    }
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade800,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 20)),
-          ),
+      color:
+          isDarkMode
+              ? Theme.of(context).colorScheme.surface
+              : Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _getCategoryEmoji(expense.category),
+                style: const TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    expense.category ?? 'Uncategorized',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '₹${expense.amount.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  DateFormat('h:mm a').format(expense.date),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        title: Text(
-          expense.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-        subtitle: Text(
-          'Paid by ${expense.paidById == _userId ? 'Me (me)' : 'Others'}',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
-        ),
-        trailing: Text(
-          '₹${expense.amount.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Colors.white,
-          ),
-        ),
-        onTap: () {
-          // TODO: Navigate to expense details
-        },
       ),
     );
+  }
+
+  String _getCategoryEmoji(String? category) {
+    if (category == null) return '💰';
+
+    switch (category.toLowerCase()) {
+      case 'food':
+        return '🍔';
+      case 'drinks':
+        return '🥤';
+      case 'transport':
+        return '🚗';
+      case 'accommodation':
+        return '🏨';
+      case 'activities':
+        return '🎯';
+      case 'shopping':
+        return '🛍️';
+      default:
+        return '💰';
+    }
   }
 
   bool _isToday(DateTime date) {
@@ -324,5 +395,54 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     return date.year == yesterday.year &&
         date.month == yesterday.month &&
         date.day == yesterday.day;
+  }
+
+  Widget _buildBalancesTab() {
+    final members = widget.trip.members;
+    final currency = widget.trip.currency;
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 0),
+      itemCount: members.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final name = members[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade900,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.grey.shade800,
+                child: Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              title: Text(
+                name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              trailing: Text(
+                '$currency 0.00',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
