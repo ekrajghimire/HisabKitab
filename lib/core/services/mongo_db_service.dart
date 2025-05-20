@@ -125,7 +125,7 @@ class MongoDBService {
     }
   }
 
-  // Get a collection by name
+  // Get  collection by name
   DbCollection? collection(String name) {
     if (!_isConnected || _db == null) {
       debugPrint('Not connected to MongoDB');

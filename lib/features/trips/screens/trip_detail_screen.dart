@@ -401,15 +401,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final members = widget.trip.members;
     final currency = widget.trip.currency;
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserName = authProvider.userModel?.name?.trim().toLowerCase();
+    final currentUserId = authProvider.user?.uid;
+    final currentUserName = authProvider.userModel?.name ?? 'Me';
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 0),
       itemCount: members.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final name = members[index];
-        final isMe = name.trim().toLowerCase() == currentUserName;
-        final displayName = isMe ? 'A0$name (me)' : name;
+        final memberId = members[index];
+        final isMe = memberId == currentUserId;
+        final displayName = isMe ? '$currentUserName (me)' : memberId;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -421,7 +422,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               leading: CircleAvatar(
                 backgroundColor: Colors.grey.shade800,
                 child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
