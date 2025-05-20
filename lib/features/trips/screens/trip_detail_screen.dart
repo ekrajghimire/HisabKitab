@@ -400,12 +400,16 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   Widget _buildBalancesTab() {
     final members = widget.trip.members;
     final currency = widget.trip.currency;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserName = authProvider.userModel?.name?.trim().toLowerCase();
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 0),
       itemCount: members.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final name = members[index];
+        final isMe = name.trim().toLowerCase() == currentUserName;
+        final displayName = isMe ? 'A0$name (me)' : name;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -425,7 +429,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
               ),
               title: Text(
-                name,
+                displayName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,

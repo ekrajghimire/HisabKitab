@@ -82,8 +82,9 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         final groupId =
             'group_${DateTime.now().millisecondsSinceEpoch}_${authProvider.user!.uid.substring(0, 5)}';
 
-        // Process participant names into userIds
-        List<String> members = [authProvider.user!.uid]; // Start with creator
+        // Use display name for the current user
+        final currentUserName = authProvider.userModel?.name ?? 'Me';
+        List<String> members = [currentUserName]; // Start with creator's name
         for (var i = 1; i < _participantControllers.length; i++) {
           if (_participantControllers[i].text.isNotEmpty) {
             members.add(_participantControllers[i].text.trim());
