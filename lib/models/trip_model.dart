@@ -1,5 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'dart:convert';
+import 'package:fixnum/fixnum.dart' show Int64;
 
 class TripModel {
   final String id;
@@ -30,6 +31,36 @@ class TripModel {
     this.icon = 'luggage',
   });
 
+  TripModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? groupId,
+    String? createdBy,
+    DateTime? startDate,
+    DateTime? endDate,
+    String? currency,
+    List<String>? members,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? icon,
+  }) {
+    return TripModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      groupId: groupId ?? this.groupId,
+      createdBy: createdBy ?? this.createdBy,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      currency: currency ?? this.currency,
+      members: members ?? this.members,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
+      icon: icon ?? this.icon,
+    );
+  }
+
   // Convert to Map for Firestore or local storage
   Map<String, dynamic> toMap() {
     return {
@@ -57,10 +88,12 @@ class TripModel {
     try {
       print('Creating TripModel from map: $map');
 
-      // Handle both Timestamp and milliseconds formats for dates
+      // Helper function to parse dates from various formats
       DateTime parseDate(dynamic value) {
-        if (value is Timestamp) {
+        if (value is firestore.Timestamp) {
           return value.toDate();
+        } else if (value is Int64) {
+          return DateTime.fromMillisecondsSinceEpoch(value.toInt());
         } else if (value is int) {
           return DateTime.fromMillisecondsSinceEpoch(value);
         } else if (value is DateTime) {
@@ -74,7 +107,7 @@ class TripModel {
       final String description = map['description'] ?? '';
       final String groupId = map['groupId'] ?? '';
       final String createdBy = map['createdBy'] ?? '';
-      final String currency = map['currency'] ?? 'USD';
+      final String currency = map['currency'] ?? '₹';
       final String icon = map['icon'] ?? 'luggage';
 
       // Parse dates

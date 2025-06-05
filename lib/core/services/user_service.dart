@@ -33,7 +33,7 @@ class UserService {
               .get();
 
       if (doc.exists) {
-        final userData = UserModel.fromMap(doc.data()!..['id'] = doc.id);
+        final userData = UserModel.fromMap(doc.data()!..['uid'] = doc.id);
         // Add to cache
         _userCache[userId] = userData;
         return userData;
@@ -72,7 +72,7 @@ class UserService {
               .get();
 
       for (final doc in querySnapshot.docs) {
-        final userData = UserModel.fromMap(doc.data()..['id'] = doc.id);
+        final userData = UserModel.fromMap(doc.data()..['uid'] = doc.id);
         users[doc.id] = userData;
         _userCache[doc.id] = userData; // Update cache
       }
@@ -88,11 +88,11 @@ class UserService {
     try {
       await _firestore
           .collection(AppConstants.usersCollection)
-          .doc(user.id)
+          .doc(user.uid)
           .update(user.toMap());
 
       // Update cache
-      _userCache[user.id] = user;
+      _userCache[user.uid] = user;
       return true;
     } catch (e) {
       print('Error updating user data: $e');

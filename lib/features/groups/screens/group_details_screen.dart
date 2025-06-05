@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/group_model.dart';
-import 'trip_details_screen.dart';
+import '../../../models/trip_model.dart';
+import '../../trips/screens/trip_detail_screen.dart';
 
 class GroupDetailsScreen extends StatelessWidget {
   final GroupModel group;
@@ -14,17 +15,27 @@ class GroupDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Instead of showing own UI, navigate to TripDetailsScreen
+    // Create a trip model from the group data
+    final trip = TripModel(
+      id: group.id,
+      name: group.name,
+      description: group.description ?? '',
+      groupId: group.id,
+      createdBy: group.creatorId,
+      startDate: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 7)),
+      currency: group.currency ?? 'INR',
+      members: group.memberIds,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      icon: group.iconName ?? 'group',
+    );
+
+    // Navigate to TripDetailScreen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder:
-              (context) => TripDetailsScreen(
-                group: group,
-                autoShowExpenses: fromCreation,
-              ),
-        ),
+        MaterialPageRoute(builder: (context) => TripDetailScreen(trip: trip)),
       );
     });
 

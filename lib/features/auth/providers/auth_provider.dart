@@ -3,9 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../models/user_model.dart';
+import '../../../core/services/mongo_db_service.dart';
 
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
 
@@ -13,6 +15,7 @@ class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final MongoDBService _mongoDb = MongoDBService.instance;
 
   AuthStatus _status = AuthStatus.initial;
   User? _user;
@@ -132,34 +135,27 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      // Trigger the Google Sign In process
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        // User canceled the sign-in
         _status = AuthStatus.unauthenticated;
         notifyListeners();
         return false;
       }
 
-      // Obtain the auth details from the Google Sign In
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-
-      // Create a credential for Firebase with the token
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
       final UserCredential userCredential = await _auth.signInWithCredential(
         credential,
       );
       final User? user = userCredential.user;
 
       if (user != null) {
-        // Check if this is a new user
         final doc =
             await _firestore
                 .collection(AppConstants.usersCollection)
@@ -167,18 +163,14 @@ class AuthProvider with ChangeNotifier {
                 .get();
 
         if (!doc.exists) {
-          // Create a new user document
           final now = DateTime.now();
           final newUser = UserModel(
-            id: user.uid,
+            uid: user.uid,
             name: user.displayName ?? 'User',
             email: user.email ?? '',
             photoUrl: user.photoURL,
-            phoneNumber: user.phoneNumber,
-            groupIds: [],
             createdAt: now,
             updatedAt: now,
-            preferences: null,
           );
 
           await _firestore
@@ -215,15 +207,12 @@ class AuthProvider with ChangeNotifier {
       if (result.user != null) {
         final now = DateTime.now();
         final newUser = UserModel(
-          id: result.user!.uid,
+          uid: result.user!.uid,
           name: name,
           email: email.trim(),
           photoUrl: null,
-          phoneNumber: null,
-          groupIds: [],
           createdAt: now,
           updatedAt: now,
-          preferences: null,
         );
 
         await _firestore
@@ -303,5 +292,58 @@ class AuthProvider with ChangeNotifier {
       }
     }
     return 'An error occurred: ${error.toString()}';
+  }
+
+  Future<List<UserModel>> getUsersByIds(List<String> userIds) async {
+    try {
+      final users =
+          await _mongoDb
+              .collection(MongoDBService.usersCollection)
+              ?.find({
+                '_id': {r'$in': userIds},
+              })
+              .map((doc) {
+                final map = {...doc};
+                map['uid'] = doc['_id'].toString();
+                map.remove('_id');
+                return UserModel.fromMap(map);
+              })
+              .toList();
+
+      return users?.cast<UserModel>() ?? [];
+    } catch (e) {
+      debugPrint('Error fetching users: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<UserModel>> searchUsers(String query) async {
+    try {
+      final users =
+          await _mongoDb
+              .collection(MongoDBService.usersCollection)
+              ?.find({
+                r'$or': [
+                  {
+                    'name': {r'$regex': query, r'$options': 'i'},
+                  },
+                  {
+                    'email': {r'$regex': query, r'$options': 'i'},
+                  },
+                ],
+              })
+              .map((doc) {
+                final map = {...doc};
+                map['uid'] = doc['_id'].toString();
+                map.remove('_id');
+                return UserModel.fromMap(map);
+              })
+              .toList();
+
+      return users?.cast<UserModel>() ?? [];
+    } catch (e) {
+      debugPrint('Error searching users: $e');
+      rethrow;
+    }
   }
 }

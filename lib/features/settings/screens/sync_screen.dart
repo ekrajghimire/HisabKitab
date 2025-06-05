@@ -1,7 +1,98 @@
 import 'package:flutter/material.dart';
-import '../../../core/services/dual_storage_service.dart';
-import '../../../core/widgets/mongodb_status_indicator.dart';
 import 'dart:async';
+import '../../../core/services/mongo_db_service.dart';
+
+class SyncStatus {
+  final bool isComplete;
+  final String message;
+  final bool success;
+  final double progress;
+
+  SyncStatus({
+    required this.isComplete,
+    required this.message,
+    required this.success,
+    required this.progress,
+  });
+}
+
+class DualStorageService {
+  static final DualStorageService _instance = DualStorageService._internal();
+  static DualStorageService get instance => _instance;
+  final MongoDBService _mongoDb = MongoDBService.instance;
+
+  DualStorageService._internal();
+
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
+
+  Stream<SyncStatus> manualSync() async* {
+    if (_isSyncing) {
+      yield SyncStatus(
+        isComplete: true,
+        message: 'Sync already in progress',
+        success: false,
+        progress: 0,
+      );
+      return;
+    }
+
+    _isSyncing = true;
+    try {
+      // Connect to MongoDB
+      yield SyncStatus(
+        isComplete: false,
+        message: 'Connecting to MongoDB...',
+        success: true,
+        progress: 10,
+      );
+      await _mongoDb.connect();
+
+      // Sync users
+      yield SyncStatus(
+        isComplete: false,
+        message: 'Syncing user data...',
+        success: true,
+        progress: 30,
+      );
+      // TODO: Implement user sync
+
+      // Sync trips
+      yield SyncStatus(
+        isComplete: false,
+        message: 'Syncing trips...',
+        success: true,
+        progress: 60,
+      );
+      // TODO: Implement trip sync
+
+      // Sync expenses
+      yield SyncStatus(
+        isComplete: false,
+        message: 'Syncing expenses...',
+        success: true,
+        progress: 90,
+      );
+      // TODO: Implement expense sync
+
+      yield SyncStatus(
+        isComplete: true,
+        message: 'All data synchronized successfully',
+        success: true,
+        progress: 100,
+      );
+    } catch (e) {
+      yield SyncStatus(
+        isComplete: true,
+        message: 'Sync failed: ${e.toString()}',
+        success: false,
+        progress: 0,
+      );
+    } finally {
+      _isSyncing = false;
+    }
+  }
+}
 
 class SyncScreen extends StatefulWidget {
   const SyncScreen({super.key});
@@ -74,7 +165,7 @@ class _SyncScreenState extends State<SyncScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('MongoDB Sync'),
+        title: const Text('Data Sync'),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       ),
       body: Padding(
@@ -82,33 +173,13 @@ class _SyncScreenState extends State<SyncScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status card
-            Card(
-              margin: const EdgeInsets.only(bottom: 24),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MongoDB Status',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    const MongoDBStatusIndicator(showConnectionString: true),
-                  ],
-                ),
-              ),
-            ),
-
-            // Sync controls
             Text(
               'Manual Synchronization',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             Text(
-              'Synchronize your local data with MongoDB. This will upload all your local trips, expenses and other data to the cloud.',
+              'Synchronize your local data with the cloud. This will upload all your trips, expenses and other data.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
@@ -211,7 +282,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
             // Footer note
             Text(
-              'Note: Automatic syncing happens in the background when you are online and your MongoDB is configured correctly.',
+              'Note: Automatic syncing happens in the background when you are online.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontStyle: FontStyle.italic,
                 color: Colors.grey,

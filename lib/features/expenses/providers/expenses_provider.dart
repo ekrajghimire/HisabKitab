@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../models/expense_model.dart';
+import '../../../core/services/mongo_db_service.dart';
 
 class ExpensesProvider with ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final MongoDBService _mongoDb = MongoDBService.instance;
 
   final Map<String, List<ExpenseModel>> _groupExpenses = {};
   String? _errorMessage;
@@ -45,26 +44,23 @@ class ExpensesProvider with ChangeNotifier {
     if (_isLoading) return;
 
     try {
+      debugPrint('ExpensesProvider: Fetching expenses for group $groupId');
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      final querySnapshot =
-          await _firestore
-              .collection(AppConstants.expensesCollection)
-              .where('groupId', isEqualTo: groupId)
-              .orderBy('date', descending: true)
-              .get();
+      final expenses = await _mongoDb.getExpensesForGroup(groupId);
+      _groupExpenses[groupId] =
+          expenses.map((e) => ExpenseModel.fromMap(e)).toList()
+            ..sort((a, b) => b.date.compareTo(a.date));
 
-      final expenses =
-          querySnapshot.docs
-              .map((doc) => ExpenseModel.fromMap(doc.data()..['id'] = doc.id))
-              .toList();
-
-      _groupExpenses[groupId] = expenses;
       _isLoading = false;
       notifyListeners();
-    } catch (e) {
+      debugPrint('ExpensesProvider: Fetched ${expenses.length} expenses');
+    } catch (e, stackTrace) {
+      debugPrint(
+        'ExpensesProvider: Error fetching expenses: $e\nStackTrace: $stackTrace',
+      );
       _isLoading = false;
       _errorMessage = 'Failed to fetch expenses: ${e.toString()}';
       notifyListeners();
@@ -83,6 +79,7 @@ class ExpensesProvider with ChangeNotifier {
     DateTime? date,
   }) async {
     try {
+      debugPrint('ExpensesProvider: Creating expense...');
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
@@ -106,10 +103,11 @@ class ExpensesProvider with ChangeNotifier {
         updatedAt: now,
       );
 
-      await _firestore
-          .collection(AppConstants.expensesCollection)
-          .doc(expenseId)
-          .set(newExpense.toMap());
+      debugPrint('ExpensesProvider: Saving expense to MongoDB...');
+      debugPrint('ExpenseData: ${newExpense.toMap()}');
+
+      // Save to MongoDB
+      await _mongoDb.saveExpense(newExpense.toMap());
 
       // Update local state
       if (_groupExpenses.containsKey(groupId)) {
@@ -120,9 +118,13 @@ class ExpensesProvider with ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
+      debugPrint('ExpensesProvider: Expense creation completed');
 
       return newExpense;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint(
+        'ExpensesProvider: Error creating expense: $e\nStackTrace: $stackTrace',
+      );
       _isLoading = false;
       _errorMessage = 'Failed to create expense: ${e.toString()}';
       notifyListeners();
@@ -138,13 +140,11 @@ class ExpensesProvider with ChangeNotifier {
 
       final updatedData = {
         ...updatedExpense.toMap(),
-        'updatedAt': Timestamp.fromDate(DateTime.now()),
+        'id': updatedExpense.id,
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
 
-      await _firestore
-          .collection(AppConstants.expensesCollection)
-          .doc(updatedExpense.id)
-          .update(updatedData);
+      await _mongoDb.saveExpense(updatedData);
 
       // Update local state
       final groupId = updatedExpense.groupId;
@@ -177,10 +177,7 @@ class ExpensesProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      await _firestore
-          .collection(AppConstants.expensesCollection)
-          .doc(expenseId)
-          .delete();
+      await _mongoDb.deleteExpense(expenseId);
 
       // Update local state
       if (_groupExpenses.containsKey(groupId)) {

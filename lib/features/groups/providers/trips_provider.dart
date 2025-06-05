@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../models/trip_model.dart';
-import '../../../core/services/dual_storage_service.dart';
+import '../../../core/services/mongo_db_service.dart';
+import '../../../core/services/local_storage_service.dart';
 
 class TripsProvider with ChangeNotifier {
   List<TripModel> _trips = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  final DualStorageService _storage = DualStorageService.instance;
+  final MongoDBService _mongoDb = MongoDBService.instance;
 
   List<TripModel> get trips => _trips;
   bool get isLoading => _isLoading;
@@ -21,18 +22,18 @@ class TripsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      print('Fetching trips for user: $userId');
+      debugPrint('Fetching trips for user: $userId');
 
-      // Get trips using dual storage service which handles both local and MongoDB sources
-      final userTrips = await _storage.getTripsForUser(userId);
+      final userTrips = await _mongoDb.getTripsForUser(userId);
+      _trips = userTrips.map((map) => TripModel.fromMap(map)).toList();
 
-      print('Trips fetched: ${userTrips.length}');
+      // Sort by start date (descending)
+      _trips.sort((a, b) => b.startDate.compareTo(a.startDate));
 
-      _trips = userTrips;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('Error fetching trips: $e');
+      debugPrint('Error fetching trips: $e');
       _isLoading = false;
       _errorMessage = 'Failed to fetch trips: ${e.toString()}';
       notifyListeners();
@@ -56,7 +57,7 @@ class TripsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      print(
+      debugPrint(
         'Creating trip with name: $name, group: $groupId, creator: $createdBy',
       );
 
@@ -78,28 +79,18 @@ class TripsProvider with ChangeNotifier {
         icon: icon ?? 'luggage',
       );
 
-      // Print the trip data before saving
-      print('Trip data: ${newTrip.toMap()}');
-
-      // Save using dual storage service which handles both local and MongoDB storage
-      final success = await _storage.saveTrip(newTrip);
-
-      if (!success) {
-        throw Exception('Failed to save trip');
-      }
-
-      print('Trip saved successfully with ID: $tripId');
+      // Save to MongoDB
+      await _mongoDb.saveTrip(newTrip.toMap()..['id'] = tripId);
 
       // Add to local list
       _trips.add(newTrip);
       _isLoading = false;
       notifyListeners();
 
-      print('Local state updated with new trip');
-
+      debugPrint('Trip saved successfully with ID: $tripId');
       return newTrip;
     } catch (e) {
-      print('ERROR creating trip: $e');
+      debugPrint('ERROR creating trip: $e');
       _isLoading = false;
       _errorMessage = 'Failed to create trip: ${e.toString()}';
       notifyListeners();
@@ -107,47 +98,51 @@ class TripsProvider with ChangeNotifier {
     }
   }
 
-  // Clear all trips (for testing)
-  Future<bool> clearAllTrips() async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      await _storage.clearAllTripsData();
-
-      _trips = [];
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      print('Error clearing trips: $e');
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Manual sync with MongoDB (can be called from settings)
-  Future<bool> syncWithMongoDB() async {
+  // Delete a trip
+  Future<bool> deleteTrip(String tripId) async {
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      final success = await _storage.syncWithMongoDB();
+      debugPrint('Attempting to delete trip: $tripId');
+      await _mongoDb.deleteTrip(tripId);
+      debugPrint('MongoDB deletion successful');
 
-      // Refresh trips after sync
-      if (success && _trips.isNotEmpty && _trips.first.createdBy.isNotEmpty) {
-        await fetchUserTrips(_trips.first.createdBy);
-      }
+      _trips.removeWhere((trip) => trip.id == tripId);
+      debugPrint('Trip removed from local state');
+
+      _isLoading = false;
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting trip: $e');
+      _isLoading = false;
+      _errorMessage = 'Failed to delete trip: ${e.toString()}';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Clear all trips
+  Future<bool> clearAllTrips() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // Clear local storage
+      await LocalStorageService.clearAllTripsData();
+
+      // Clear in-memory trips
+      _trips.clear();
 
       _isLoading = false;
       notifyListeners();
-      return success;
+      return true;
     } catch (e) {
-      print('Error syncing with MongoDB: $e');
+      debugPrint('Error clearing trips: $e');
       _isLoading = false;
-      _errorMessage = 'Failed to sync with MongoDB: ${e.toString()}';
       notifyListeners();
       return false;
     }

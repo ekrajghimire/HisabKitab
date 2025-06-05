@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/firebase_service.dart';
+import 'core/services/mongo_db_service.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
@@ -15,6 +16,8 @@ import 'features/settings/providers/theme_provider.dart';
 import 'features/groups/providers/groups_provider.dart';
 import 'features/expenses/providers/expenses_provider.dart';
 import 'features/groups/providers/trips_provider.dart';
+import 'features/trips/screens/edit_trip_screen.dart';
+import 'models/trip_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,15 @@ Future<void> main() async {
     // Initialize FirebaseService
     final firebaseService = await FirebaseService.instance;
     await firebaseService.configureFirestore();
+
+    // Initialize MongoDB connection
+    try {
+      await MongoDBService.instance.connect();
+    } catch (e) {
+      debugPrint('MongoDB connection failed: $e');
+      // Continue app execution even if MongoDB fails
+      // The app will attempt to reconnect when needed
+    }
 
     // Get theme preference - set to true for dark mode by default
     final prefs = await SharedPreferences.getInstance();
@@ -103,6 +115,12 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: const SplashScreen(),
+      routes: {
+        '/edit-trip': (context) {
+          final trip = ModalRoute.of(context)!.settings.arguments as TripModel;
+          return EditTripScreen(trip: trip);
+        },
+      },
     );
   }
 }

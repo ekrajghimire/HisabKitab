@@ -14,6 +14,9 @@ class MyTripsScreen extends StatefulWidget {
 }
 
 class _MyTripsScreenState extends State<MyTripsScreen> {
+  bool _isSelectionMode = false;
+  Set<String> _selectedTripIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +39,118 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     await _loadTrips();
   }
 
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedTripIds.clear();
+      }
+    });
+  }
+
+  void _toggleTripSelection(String tripId) {
+    setState(() {
+      if (_selectedTripIds.contains(tripId)) {
+        _selectedTripIds.remove(tripId);
+      } else {
+        _selectedTripIds.add(tripId);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedTrips() async {
+    if (_selectedTripIds.isEmpty) return;
+
+    final shouldDelete =
+        await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                backgroundColor: Theme.of(context).dialogBackgroundColor,
+                title: Text(
+                  'Delete Selected Trips',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                content: Text(
+                  'Are you sure you want to delete ${_selectedTripIds.length} selected trip(s)? This will also delete all associated expenses.',
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: const Text('Delete'),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
+
+    if (!shouldDelete || !mounted) return;
+
+    try {
+      final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
+      int successCount = 0;
+      List<String> failedTrips = [];
+
+      for (final tripId in _selectedTripIds) {
+        final success = await tripsProvider.deleteTrip(tripId);
+        if (success) {
+          successCount++;
+        } else {
+          failedTrips.add(tripId);
+        }
+      }
+
+      if (mounted) {
+        if (successCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$successCount trip(s) deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
+        if (failedTrips.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete ${failedTrips.length} trip(s)'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+
+        setState(() {
+          _isSelectionMode = false;
+          _selectedTripIds.clear();
+        });
+        _refreshTrips();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting trips: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -46,7 +161,20 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         title: Text('My Trips'),
         actions: [
-          IconButton(icon: Icon(Icons.refresh), onPressed: _refreshTrips),
+          IconButton(
+            icon: Icon(
+              _isSelectionMode ? Icons.close : Icons.delete_outline,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: _toggleSelectionMode,
+          ),
+          if (_isSelectionMode && _selectedTripIds.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: _deleteSelectedTrips,
+            ),
+          if (!_isSelectionMode)
+            IconButton(icon: Icon(Icons.refresh), onPressed: _refreshTrips),
         ],
       ),
       body: Consumer<TripsProvider>(
@@ -80,6 +208,19 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           );
         },
       ),
+      floatingActionButton:
+          !_isSelectionMode
+              ? FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateTripScreen()),
+                  ).then((_) => _refreshTrips());
+                },
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: const Icon(Icons.add, color: Colors.white),
+              )
+              : null,
     );
   }
 
@@ -109,9 +250,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
               'Create your first trip to start tracking expenses',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ),
@@ -141,24 +280,37 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
   Widget _buildTripCard(TripModel trip) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isSelected = _selectedTripIds.contains(trip.id);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color:
-          isDarkMode
-              ? Colors.grey.shade900
-              : Theme.of(context).colorScheme.surface,
+          isSelected
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+              : (isDarkMode
+                  ? Colors.grey.shade900
+                  : Theme.of(context).colorScheme.surface),
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TripDetailScreen(trip: trip),
-            ),
-          ).then((_) => _refreshTrips());
+          if (_isSelectionMode) {
+            _toggleTripSelection(trip.id);
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TripDetailScreen(trip: trip),
+              ),
+            ).then((_) => _refreshTrips());
+          }
+        },
+        onLongPress: () {
+          if (!_isSelectionMode) {
+            _toggleSelectionMode();
+            _toggleTripSelection(trip.id);
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -167,6 +319,19 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             children: [
               Row(
                 children: [
+                  if (_isSelectionMode)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: Icon(
+                        isSelected ? Icons.check_circle : Icons.circle_outlined,
+                        color:
+                            isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                    ),
                   CircleAvatar(
                     backgroundColor: Theme.of(
                       context,
@@ -210,13 +375,14 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.5),
-                  ),
+                  if (!_isSelectionMode)
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 16,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.5),
+                    ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -248,7 +414,9 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
+                    trip.startDate != null
+                        ? _formatDate(trip.startDate!)
+                        : 'No date set',
                     style: TextStyle(
                       color: Theme.of(
                         context,
@@ -265,8 +433,6 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day/$month';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

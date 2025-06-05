@@ -60,50 +60,36 @@ class GroupsProvider with ChangeNotifier {
       final now = DateTime.now();
       final groupId = const Uuid().v4();
 
-      // Initialize member list with creator
-      final memberIds = <String>[creatorId];
-
-      // Add additional members if provided
-      if (additionalMemberIds != null && additionalMemberIds.isNotEmpty) {
-        for (final memberId in additionalMemberIds) {
-          if (!memberIds.contains(memberId)) {
-            memberIds.add(memberId);
-          }
-        }
+      final memberIds = [creatorId];
+      if (additionalMemberIds != null) {
+        memberIds.addAll(additionalMemberIds);
       }
 
-      final newGroup = GroupModel(
+      final group = GroupModel(
         id: groupId,
         name: name,
-        description: description,
+        description: description ?? '',
         creatorId: creatorId,
         memberIds: memberIds,
-        imageUrl: null,
-        iconName: iconName,
+        iconName: iconName ?? 'beach_access',
         currency: currency,
         createdAt: now,
         updatedAt: now,
       );
 
+      // Save to Firestore
       await _firestore
           .collection(AppConstants.groupsCollection)
           .doc(groupId)
-          .set(newGroup.toMap());
+          .set(group.toMap());
 
-      // Update user documents to include this group
-      // Only update for the creator as other "members" may just be names at this point
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(creatorId)
-          .update({
-            'groupIds': FieldValue.arrayUnion([groupId]),
-          });
+      // Update local state
+      _groups.add(group);
 
-      _groups.add(newGroup);
       _isLoading = false;
       notifyListeners();
 
-      return newGroup;
+      return group;
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'Failed to create group: ${e.toString()}';

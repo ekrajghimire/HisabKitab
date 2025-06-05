@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fixnum/fixnum.dart';
 
 class ExpenseSplit {
   final String userId;
@@ -98,6 +98,7 @@ class ExpenseModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'groupId': groupId,
       'title': title,
       'amount': amount,
@@ -106,42 +107,50 @@ class ExpenseModel {
       'description': description,
       'category': category,
       'receiptUrl': receiptUrl,
-      'date': Timestamp.fromDate(date),
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
+      'date': date.millisecondsSinceEpoch,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'updatedAt': updatedAt.millisecondsSinceEpoch,
     };
   }
 
   factory ExpenseModel.fromMap(Map<String, dynamic> map) {
-    // Convert Firestore Timestamp to DateTime
-    final dateTimestamp = map['date'] as Timestamp;
-    final createdAtTimestamp = map['createdAt'] as Timestamp;
-    final updatedAtTimestamp = map['updatedAt'] as Timestamp;
+    final date =
+        map['date'] is Int64
+            ? DateTime.fromMillisecondsSinceEpoch(map['date'].toInt())
+            : DateTime.fromMillisecondsSinceEpoch(map['date'] as int);
 
-    // Convert the splitAmounts from Firestore
-    final splitAmountsMap = map['splitAmounts'] as Map<String, dynamic>;
-    final splitAmounts = <String, double>{};
+    final createdAt =
+        map['createdAt'] is Int64
+            ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'].toInt())
+            : DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int);
 
-    splitAmountsMap.forEach((key, value) {
-      splitAmounts[key] = (value is int) ? value.toDouble() : value;
+    final updatedAt =
+        map['updatedAt'] is Int64
+            ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'].toInt())
+            : DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int);
+
+    // Convert split amounts to Map<String, double>
+    final splitAmountsRaw = map['splitAmounts'] as Map<String, dynamic>;
+    final splitAmounts = splitAmountsRaw.map((key, value) {
+      if (value is int) {
+        return MapEntry(key, value.toDouble());
+      }
+      return MapEntry(key, value as double);
     });
 
     return ExpenseModel(
-      id: map['id'],
-      groupId: map['groupId'],
-      title: map['title'],
-      amount:
-          (map['amount'] is int)
-              ? (map['amount'] as int).toDouble()
-              : map['amount'],
-      paidById: map['paidById'],
+      id: map['id'] as String,
+      groupId: map['groupId'] as String,
+      title: map['title'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      paidById: map['paidById'] as String,
       splitAmounts: splitAmounts,
-      description: map['description'],
-      category: map['category'],
-      receiptUrl: map['receiptUrl'],
-      date: dateTimestamp.toDate(),
-      createdAt: createdAtTimestamp.toDate(),
-      updatedAt: updatedAtTimestamp.toDate(),
+      description: map['description'] as String?,
+      category: map['category'] as String?,
+      receiptUrl: map['receiptUrl'] as String?,
+      date: date,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 

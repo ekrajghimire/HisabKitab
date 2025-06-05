@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../../models/group_model.dart';
 import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../groups/screens/group_details_screen.dart';
 import '../../groups/screens/my_trips_screen.dart';
 import '../../groups/screens/create_trip_screen.dart';
 import '../../groups/providers/groups_provider.dart';
 import '../../groups/providers/trips_provider.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../../trips/screens/trip_detail_screen.dart';
-import '../../../core/widgets/mongodb_status_indicator.dart';
-import '../../settings/screens/mongodb_config_screen.dart';
-import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,20 +31,36 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    // Use post-frame callback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserData();
+    });
   }
 
   Future<void> _loadUserData() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-    final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user == null) return;
 
-    if (authProvider.user != null) {
-      // Load user's groups
-      await groupsProvider.fetchUserGroups(authProvider.user!.uid);
+    try {
+      // Load groups
+      final groupsProvider = Provider.of<GroupsProvider>(
+        context,
+        listen: false,
+      );
+      await groupsProvider.fetchUserGroups(user.uid);
 
-      // Load user's trips
-      await tripsProvider.fetchUserTrips(authProvider.user!.uid);
+      // Load trips
+      final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
+      await tripsProvider.fetchUserTrips(user.uid);
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load data: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -70,10 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => const CreateTripScreen()),
                   ).then((result) {
                     if (result != null) {
-                      // Refresh the trips list
                       _loadUserData();
-
-                      // Navigate to the trip details screen
                       if (result is TripModel) {
                         Navigator.push(
                           context,
@@ -86,8 +99,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   });
                 },
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                child: const Icon(Icons.add, color: Colors.white, size: 32),
+                backgroundColor: const Color(0xFF003366),
+                shape: const CircleBorder(
+                  side: BorderSide(color: Colors.blue, width: 2.0),
+                ),
+                child: const Icon(Icons.add, color: Colors.blue, size: 36),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(
@@ -96,8 +112,9 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor:
-            isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-        elevation: 8,
+            isDarkMode
+                ? Colors.white.withOpacity(0.5)
+                : Colors.black.withOpacity(0.6),
         items: const [
           BottomNavigationBarItem(
             icon: Text(
@@ -119,97 +136,85 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trips = Provider.of<TripsProvider>(context).trips;
+    return Consumer<TripsProvider>(
+      builder: (context, tripsProvider, child) {
+        final trips = tripsProvider.trips;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'HisabKitab',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MongoDBConfigScreen(),
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'HisabKitab',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                );
-              },
-              child: const MongoDBStatusIndicator(),
-            ),
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (trips.isEmpty)
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.card_travel,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'No trips yet',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Create your first trip using the + button',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ),
-              )
-            else
-              Expanded(
-                child: ListView.builder(
-                  itemCount: trips.length,
-                  itemBuilder: (context, index) {
-                    final trip = trips[index];
-                    return TripCard(
-                      trip: trip,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TripDetailScreen(trip: trip),
+                const SizedBox(height: 16),
+
+                if (trips.isEmpty)
+                  Center(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 40),
+                        Icon(
+                          Icons.card_travel,
+                          size: 64,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No trips yet',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Create your first trip using the + button',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: trips.length,
+                      itemBuilder: (context, index) {
+                        final trip = trips[index];
+                        return TripCard(
+                          trip: trip,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => TripDetailScreen(trip: trip),
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -219,6 +224,10 @@ class TripCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const TripCard({required this.trip, required this.onTap, super.key});
+
+  String _formatDate(DateTime date) {
+    return DateFormat('EEEE, MMMM d, y').format(date);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +277,7 @@ class TripCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat('EEEE, MMMM d, y').format(trip.createdAt),
+                          _formatDate(trip.createdAt),
                           style: Theme.of(
                             context,
                           ).textTheme.bodyMedium?.copyWith(
@@ -288,10 +297,10 @@ class TripCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (trip.description != null && trip.description!.isNotEmpty) ...[
+              if (trip.description.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  trip.description!,
+                  trip.description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,

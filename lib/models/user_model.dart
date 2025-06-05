@@ -1,77 +1,59 @@
 import 'dart:convert';
 
 class UserModel {
-  final String id;
+  final String uid;
   final String name;
   final String email;
   final String? photoUrl;
-  final String? phoneNumber;
-  final List<String> groupIds;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final Map<String, dynamic>? preferences;
 
   UserModel({
-    required this.id,
+    required this.uid,
     required this.name,
     required this.email,
     this.photoUrl,
-    this.phoneNumber,
-    required this.groupIds,
     required this.createdAt,
     required this.updatedAt,
-    this.preferences,
   });
-
-  UserModel copyWith({
-    String? id,
-    String? name,
-    String? email,
-    String? photoUrl,
-    String? phoneNumber,
-    List<String>? groupIds,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    Map<String, dynamic>? preferences,
-  }) {
-    return UserModel(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      photoUrl: photoUrl ?? this.photoUrl,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      groupIds: groupIds ?? this.groupIds,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      preferences: preferences ?? this.preferences,
-    );
-  }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'uid': uid,
       'name': name,
       'email': email,
       'photoUrl': photoUrl,
-      'phoneNumber': phoneNumber,
-      'groupIds': groupIds,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
-      'preferences': preferences,
     };
   }
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      photoUrl: map['photoUrl'],
-      phoneNumber: map['phoneNumber'],
-      groupIds: List<String>.from(map['groupIds'] ?? []),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
-      preferences: map['preferences'],
+      uid: map['uid'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String,
+      photoUrl: map['photoUrl'] as String?,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int),
+    );
+  }
+
+  UserModel copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? photoUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      photoUrl: photoUrl ?? this.photoUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -82,7 +64,7 @@ class UserModel {
 
   @override
   String toString() {
-    return 'UserModel(id: $id, name: $name, email: $email, photoUrl: $photoUrl, phoneNumber: $phoneNumber, groupIds: $groupIds, createdAt: $createdAt, updatedAt: $updatedAt, preferences: $preferences)';
+    return 'UserModel(uid: $uid, name: $name, email: $email, photoUrl: $photoUrl, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -90,22 +72,20 @@ class UserModel {
     if (identical(this, other)) return true;
 
     return other is UserModel &&
-        other.id == id &&
+        other.uid == uid &&
         other.name == name &&
         other.email == email &&
         other.photoUrl == photoUrl &&
-        other.phoneNumber == phoneNumber &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^
+    return uid.hashCode ^
         name.hashCode ^
         email.hashCode ^
         photoUrl.hashCode ^
-        phoneNumber.hashCode ^
         createdAt.hashCode ^
         updatedAt.hashCode;
   }

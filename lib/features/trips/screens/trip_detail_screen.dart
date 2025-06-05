@@ -5,6 +5,8 @@ import '../../../models/trip_model.dart';
 import '../../../models/expense_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expenses_provider.dart';
+import '../../expenses/screens/add_expense_screen.dart';
+import '../providers/trips_provider.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -47,6 +49,53 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     });
   }
 
+  Future<void> _editTrip() async {
+    final result = await Navigator.pushNamed(
+      context,
+      '/edit-trip',
+      arguments: widget.trip,
+    );
+
+    if (result == true) {
+      // Refresh trip details if changes were made
+      final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
+      await tripsProvider.fetchTrips();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trip updated successfully')),
+        );
+      }
+    }
+  }
+
+  Future<void> _addExpense() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => AddExpenseScreen(
+              groupId: widget.trip.groupId,
+              participants: widget.trip.members,
+            ),
+      ),
+    );
+
+    if (result == true && mounted) {
+      // Refresh expenses list
+      await _loadExpenses();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Expense added successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
   double get _myExpensesTotal {
     if (_userId == null) return 0;
     return _expenses
@@ -83,7 +132,17 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(widget.trip.name), elevation: 0),
+      appBar: AppBar(
+        title: Text(widget.trip.name),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _editTrip,
+            tooltip: 'Edit Trip',
+          ),
+        ],
+      ),
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -179,12 +238,11 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   ),
                 ],
               ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to add expense screen
-        },
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addExpense,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Expense', style: TextStyle(color: Colors.white)),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
