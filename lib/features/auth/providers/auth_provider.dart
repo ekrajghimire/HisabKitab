@@ -100,7 +100,9 @@ class AuthProvider with ChangeNotifier {
                 .get();
 
         if (doc.exists) {
-          _userModel = UserModel.fromMap(doc.data()!..['id'] = doc.id);
+          final data = doc.data()!;
+          data['uid'] = doc.id;
+          _userModel = UserModel.fromMap(data);
         }
       } catch (e) {
         _errorMessage = 'Failed to fetch user data: ${e.toString()}';
@@ -162,23 +164,24 @@ class AuthProvider with ChangeNotifier {
                 .doc(user.uid)
                 .get();
 
-        if (!doc.exists) {
-          final now = DateTime.now();
-          final newUser = UserModel(
-            uid: user.uid,
-            name: user.displayName ?? 'User',
-            email: user.email ?? '',
-            photoUrl: user.photoURL,
-            createdAt: now,
-            updatedAt: now,
-          );
+        final now = DateTime.now();
+        final userData = UserModel(
+          uid: user.uid,
+          name: user.displayName ?? 'User',
+          email: user.email ?? '',
+          photoUrl: user.photoURL,
+          createdAt:
+              doc.exists ? (UserModel.fromMap(doc.data()!).createdAt) : now,
+          updatedAt: now,
+        );
 
-          await _firestore
-              .collection(AppConstants.usersCollection)
-              .doc(user.uid)
-              .set(newUser.toMap());
-        }
+        // Always update the user data to ensure it's in sync with Google
+        await _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(user.uid)
+            .set(userData.toMap());
 
+        _userModel = userData;
         await _saveAuthState(true);
         return true;
       }

@@ -35,6 +35,13 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+*.mocks.dart
+*.config.dart
+*.gr.dart
+
+# Web related
+lib/generated_plugin_registrant.dart
+web/firebase-messaging-sw.js
 
 # Symbolication related
 app.*.symbols
@@ -46,6 +53,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/key.properties
+/android/keystore.properties
+/android/*.jks
 
 # Firebase related
 **/google-services.json
@@ -65,6 +75,7 @@ pubsub-debug.log
 **/fastlane/Preview.html
 **/fastlane/screenshots
 **/fastlane/test_output
+**/fastlane/README.md
 
 # iOS specific
 **/ios/.generated/
@@ -75,14 +86,38 @@ pubsub-debug.log
 **/ios/Flutter/ephemeral
 **/ios/ServiceDefinitions.json
 **/ios/Pods/
+**/ios/Runner.ipa
+**/ios/Runner.app.dSYM.zip
+**/ios/fastlane/
 
 # macOS specific
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/macos/Flutter/ephemeral
 **/macos/Pods/
+**/macos/*.mode1v3
+**/macos/*.mode2v3
+**/macos/*.moved-aside
+**/macos/*.pbxuser
+**/macos/*.perspectivev3
+**/macos/**/*sync/
+**/macos/.sconsign.dblite
+**/macos/.tags*
+**/macos/.vagrant/
+**/macos/DerivedData/
+**/macos/Icon?
+**/macos/**/Pods/
+**/macos/**/.symlinks/
+**/macos/**/profile
+**/macos/**/xcuserdata
+**/macos/.generated/
+**/macos/Flutter/App.framework
+**/macos/Flutter/Flutter.framework
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/ephemeral/
 
 # Coverage
 coverage/
+lcov.info
 
 # Temporary files
 *.tmp
@@ -90,17 +125,39 @@ coverage/
 .env
 .env.local
 *.env.*
+*.bak
+*.cache
+*.old
 
 # Flutter version manager
 .fvm/
+.fvm/flutter_sdk
 
 # mason
 .mason/
+mason-lock.json
 
 # Local development
 local.properties
 local.settings.json
+.gradle/
 
 # Generated files
 *.g.dart
 *.freezed.dart
+*.mocks.dart
+*.gr.dart
+*.gen.dart
+*.chopper.dart
+*.gql.dart
+*.gql.g.dart
+*.graphql.dart
+*.hive.dart
+
+# Platform specific
+windows/flutter/generated_plugin_registrant.cc
+windows/flutter/generated_plugin_registrant.h
+windows/flutter/generated_plugins.cmake
+linux/flutter/generated_plugin_registrant.cc
+linux/flutter/generated_plugin_registrant.h
+linux/flutter/generated_plugins.cmake
