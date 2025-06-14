@@ -1,7 +1,6 @@
 import 'package:mongo_dart/mongo_dart.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
 import 'package:fixnum/fixnum.dart';
 
 class MongoDBService {
@@ -169,6 +168,33 @@ class MongoDBService {
     if (groups == null) return [];
     final result = await groups.find(where.eq('memberIds', userId)).toList();
     return result.cast<Map<String, dynamic>>();
+  }
+
+  Future<void> deleteGroup(String groupId) async {
+    await connect();
+    final groups = collection(groupsCollection);
+    if (groups == null) throw Exception('Failed to access groups collection');
+    await groups.remove(where.eq('id', groupId));
+  }
+
+  Future<void> addGroupMember(String groupId, String userId) async {
+    await connect();
+    final groups = collection(groupsCollection);
+    if (groups == null) throw Exception('Failed to access groups collection');
+    await groups.update(
+      where.eq('id', groupId),
+      modify.push('memberIds', userId),
+    );
+  }
+
+  Future<void> removeGroupMember(String groupId, String userId) async {
+    await connect();
+    final groups = collection(groupsCollection);
+    if (groups == null) throw Exception('Failed to access groups collection');
+    await groups.update(
+      where.eq('id', groupId),
+      modify.pull('memberIds', userId),
+    );
   }
 
   // Expense methods
@@ -349,5 +375,15 @@ class MongoDBService {
       throw Exception('Failed to access expenses collection');
     }
     await expenses.remove(where.eq('id', expenseId));
+  }
+
+  Future<Map<String, String>> getUsersByIds(List<String> userIds) async {
+    await connect();
+    final users = collection(usersCollection);
+    if (users == null) return {};
+    final result = await users.find(where.oneFrom('uid', userIds)).toList();
+    return {
+      for (var user in result) user['uid'] as String: user['name'] as String,
+    };
   }
 }

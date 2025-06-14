@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hisabkitab/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../models/expense_model.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../providers/expenses_provider.dart';
 import '../../../core/services/user_service.dart';
 
@@ -12,10 +10,12 @@ enum SplitType { equally, asParts, asAmount }
 class AddExpenseScreen extends StatefulWidget {
   final String groupId;
   final List<String> participants;
+  final Map<String, String> participantNames;
 
   const AddExpenseScreen({
     required this.groupId,
     required this.participants,
+    required this.participantNames,
     super.key,
   });
 
@@ -37,13 +37,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   SplitType _splitType = SplitType.equally;
   bool _isLoading = false;
   String? _errorMessage;
-  final Map<String, String> _participantNames = {};
 
   @override
   void initState() {
     super.initState();
     _dateController.text = DateFormat('MMM d, yyyy').format(_selectedDate);
-    _loadParticipantNames();
     _initializeParticipantControllers();
   }
 
@@ -56,23 +54,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       controller.dispose();
     }
     super.dispose();
-  }
-
-  Future<void> _loadParticipantNames() async {
-    final userService = UserService();
-    for (final userId in widget.participants) {
-      try {
-        final name = await userService.getUserDisplayName(userId);
-        setState(() {
-          _participantNames[userId] = name;
-        });
-      } catch (e) {
-        debugPrint('Error loading name for user $userId: $e');
-        setState(() {
-          _participantNames[userId] = 'Unknown User';
-        });
-      }
-    }
   }
 
   void _initializeParticipantControllers() {
@@ -96,7 +77,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               onPrimary: Colors.white,
               surface: Color(0xFF303030),
               onSurface: Colors.white,
-            ), dialogTheme: DialogThemeData(backgroundColor: Colors.grey.shade900),
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: Colors.grey.shade900),
           ),
           child: child!,
         );
@@ -128,7 +110,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               onPrimary: Colors.white,
               surface: Color(0xFF303030),
               onSurface: Colors.white,
-            ), dialogTheme: DialogThemeData(backgroundColor: Colors.grey.shade900),
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: Colors.grey.shade900),
           ),
           child: child!,
         );
@@ -157,10 +140,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       case SplitType.equally:
         final activeParticipants = widget.participants.length;
         if (activeParticipants > 0) {
-          final perPersonAmount = (totalAmount / activeParticipants)
-              .toStringAsFixed(2);
-          for (final userId in widget.participants) {
-            _participantAmountControllers[userId]?.text = perPersonAmount;
+          // Calculate base amount and remainder
+          final baseAmount = (totalAmount / activeParticipants).floorToDouble();
+          final remainder = totalAmount - (baseAmount * activeParticipants);
+
+          // Distribute the remainder to make the total exact
+          for (var i = 0; i < widget.participants.length; i++) {
+            final userId = widget.participants[i];
+            final amount = baseAmount + (i < remainder ? 1 : 0);
+            _participantAmountControllers[userId]?.text = amount
+                .toStringAsFixed(2);
           }
         }
         break;
@@ -170,13 +159,24 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           (sum, parts) => sum + parts,
         );
         if (totalParts > 0) {
-          for (final userId in widget.participants) {
+          // Calculate base amount and remainder
+          final baseAmount = (totalAmount / totalParts).floorToDouble();
+          var remainingAmount = totalAmount;
+
+          // Distribute amounts to all but the last participant
+          for (var i = 0; i < widget.participants.length - 1; i++) {
+            final userId = widget.participants[i];
             final parts = _participantParts[userId] ?? 1;
-            final amount = ((totalAmount * parts) / totalParts).toStringAsFixed(
-              2,
-            );
-            _participantAmountControllers[userId]?.text = amount;
+            final amount = (baseAmount * parts).floorToDouble();
+            _participantAmountControllers[userId]?.text = amount
+                .toStringAsFixed(2);
+            remainingAmount -= amount;
           }
+
+          // Give remaining amount to the last participant
+          final lastUserId = widget.participants.last;
+          _participantAmountControllers[lastUserId]?.text = remainingAmount
+              .toStringAsFixed(2);
         }
         break;
       case SplitType.asAmount:
@@ -216,8 +216,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       totalSplitAmount += amount;
     }
 
-    // Check if split amounts match total
-    if ((totalSplitAmount - totalAmount).abs() > 0.01) {
+    // Check if split amounts match total with a small tolerance
+    if ((totalSplitAmount - totalAmount).abs() > 0.001) {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Split amounts do not match the total amount';
@@ -279,6 +279,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.user?.uid;
+    final currentUserName = authProvider.userModel?.name ?? 'Me';
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -398,12 +402,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         items:
                             widget.participants.map((userId) {
+                              String name;
+                              if (userId == currentUserId) {
+                                name = '$currentUserName (me)';
+                              } else {
+                                name =
+                                    widget.participantNames[userId] ?? userId;
+                              }
                               return DropdownMenuItem(
                                 value: userId,
-                                child: Text(
-                                  _participantNames[userId] ?? 'Loading...',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
+                                child: Text(name),
                               );
                             }).toList(),
                         onChanged: (String? value) {
@@ -498,9 +506,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 backgroundColor:
                                     WidgetStateProperty.resolveWith<Color>(
                                       (states) =>
-                                          states.contains(
-                                                WidgetState.selected,
-                                              )
+                                          states.contains(WidgetState.selected)
                                               ? Colors.blue
                                               : Colors.transparent,
                                     ),
@@ -526,7 +532,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    _participantNames[userId] ?? 'Loading...',
+                                    widget.participantNames[userId] ??
+                                        'Unknown User',
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                 ),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
-import '../../../core/constants/app_constants.dart';
 import '../../../models/group_model.dart';
+import '../../../core/services/mongo_db_service.dart';
 
 class GroupsProvider with ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final MongoDBService _mongoDb = MongoDBService.instance;
 
   List<GroupModel> _groups = [];
   String? _errorMessage;
@@ -23,17 +22,9 @@ class GroupsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      // Query for groups where user is a member
-      final querySnapshot =
-          await _firestore
-              .collection(AppConstants.groupsCollection)
-              .where('memberIds', arrayContains: userId)
-              .get();
-
-      _groups =
-          querySnapshot.docs
-              .map((doc) => GroupModel.fromMap(doc.data()..['id'] = doc.id))
-              .toList();
+      // Query for groups where user is a member from MongoDB
+      final groupMaps = await _mongoDb.getGroupsForUser(userId);
+      _groups = groupMaps.map((map) => GroupModel.fromMap(map)).toList();
 
       _isLoading = false;
       notifyListeners();
@@ -77,11 +68,8 @@ class GroupsProvider with ChangeNotifier {
         updatedAt: now,
       );
 
-      // Save to Firestore
-      await _firestore
-          .collection(AppConstants.groupsCollection)
-          .doc(groupId)
-          .set(group.toMap());
+      // Save to MongoDB
+      await _mongoDb.saveGroup(group.toMap()..['id'] = groupId);
 
       // Update local state
       _groups.add(group);
@@ -105,16 +93,11 @@ class GroupsProvider with ChangeNotifier {
       notifyListeners();
 
       final updateData = {
-        'name': updatedGroup.name,
-        'description': updatedGroup.description,
-        'imageUrl': updatedGroup.imageUrl,
+        ...updatedGroup.toMap(),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
 
-      await _firestore
-          .collection(AppConstants.groupsCollection)
-          .doc(updatedGroup.id)
-          .update(updateData);
+      await _mongoDb.saveGroup(updateData);
 
       final index = _groups.indexWhere((g) => g.id == updatedGroup.id);
       if (index != -1) {
@@ -138,33 +121,8 @@ class GroupsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      // Get group to access member IDs
-      final groupDoc =
-          await _firestore
-              .collection(AppConstants.groupsCollection)
-              .doc(groupId)
-              .get();
-
-      if (groupDoc.exists) {
-        final groupData = groupDoc.data()!;
-        final List<dynamic> memberIds = groupData['memberIds'];
-
-        // Remove groupId from all member documents
-        for (final memberId in memberIds) {
-          await _firestore
-              .collection(AppConstants.usersCollection)
-              .doc(memberId.toString())
-              .update({
-                'groupIds': FieldValue.arrayRemove([groupId]),
-              });
-        }
-      }
-
-      // Delete the group document
-      await _firestore
-          .collection(AppConstants.groupsCollection)
-          .doc(groupId)
-          .delete();
+      // Delete the group document from MongoDB
+      await _mongoDb.deleteGroup(groupId);
 
       _groups.removeWhere((g) => g.id == groupId);
       _isLoading = false;
@@ -184,21 +142,7 @@ class GroupsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      await _firestore
-          .collection(AppConstants.groupsCollection)
-          .doc(groupId)
-          .update({
-            'memberIds': FieldValue.arrayUnion([userId]),
-            'updatedAt': DateTime.now().millisecondsSinceEpoch,
-          });
-
-      // Update user's groupIds
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .update({
-            'groupIds': FieldValue.arrayUnion([groupId]),
-          });
+      await _mongoDb.addGroupMember(groupId, userId);
 
       final index = _groups.indexWhere((g) => g.id == groupId);
       if (index != -1) {
@@ -224,21 +168,7 @@ class GroupsProvider with ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      await _firestore
-          .collection(AppConstants.groupsCollection)
-          .doc(groupId)
-          .update({
-            'memberIds': FieldValue.arrayRemove([userId]),
-            'updatedAt': DateTime.now().millisecondsSinceEpoch,
-          });
-
-      // Update user's groupIds
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(userId)
-          .update({
-            'groupIds': FieldValue.arrayRemove([groupId]),
-          });
+      await _mongoDb.removeGroupMember(groupId, userId);
 
       final index = _groups.indexWhere((g) => g.id == groupId);
       if (index != -1) {

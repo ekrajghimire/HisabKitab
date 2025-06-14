@@ -7,6 +7,7 @@ import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expenses_provider.dart';
 import '../../expenses/screens/add_expense_screen.dart';
 import '../providers/trips_provider.dart';
+import '../../../core/services/mongo_db_service.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -71,6 +72,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Future<void> _addExpense() async {
+    // Fetch all participant user names from MongoDB
+    final participantNames = await MongoDBService.instance.getUsersByIds(
+      widget.trip.members,
+    );
+    debugPrint('Participant names: $participantNames');
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -78,11 +85,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
             (context) => AddExpenseScreen(
               groupId: widget.trip.groupId,
               participants: widget.trip.members,
+              participantNames: participantNames,
             ),
       ),
     );
 
-    if (result == true && mounted) {
+    if (result != null && mounted) {
       // Refresh expenses list
       await _loadExpenses();
 

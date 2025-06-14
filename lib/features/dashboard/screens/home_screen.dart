@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../models/group_model.dart';
 import '../../../models/trip_model.dart';
 import '../../auth/providers/auth_provider.dart';
-import '../../groups/screens/group_details_screen.dart';
 import '../../groups/screens/my_trips_screen.dart';
 import '../../groups/screens/create_trip_screen.dart';
 import '../../groups/providers/groups_provider.dart';

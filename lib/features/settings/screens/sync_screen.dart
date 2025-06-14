@@ -114,7 +114,7 @@ class _SyncScreenState extends State<SyncScreen> {
   }
 
   Future<void> _checkSyncStatus() async {
-    final isSyncing = await _dualStorageService.isSyncing;
+    final isSyncing = _dualStorageService.isSyncing;
     setState(() {
       _isSyncing = isSyncing;
     });

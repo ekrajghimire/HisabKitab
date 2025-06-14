@@ -15,7 +15,7 @@ class MyTripsScreen extends StatefulWidget {
 
 class _MyTripsScreenState extends State<MyTripsScreen> {
   bool _isSelectionMode = false;
-  Set<String> _selectedTripIds = {};
+  final Set<String> _selectedTripIds = {};
 
   @override
   void initState() {
@@ -415,7 +415,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   const SizedBox(width: 4),
                   Text(
                     trip.startDate != null
-                        ? _formatDate(trip.startDate!)
+                        ? _formatDate(trip.startDate)
                         : 'No date set',
                     style: TextStyle(
                       color: Theme.of(
