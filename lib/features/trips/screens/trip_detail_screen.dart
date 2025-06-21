@@ -8,6 +8,7 @@ import '../../expenses/providers/expenses_provider.dart';
 import '../../expenses/screens/add_expense_screen.dart';
 import '../providers/trips_provider.dart';
 import '../../../core/services/mongo_db_service.dart';
+import '../../../core/services/user_service.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -72,11 +73,48 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Future<void> _addExpense() async {
-    // Fetch all participant user names from MongoDB
-    final participantNames = await MongoDBService.instance.getUsersByIds(
-      widget.trip.members,
-    );
-    debugPrint('Participant names: $participantNames');
+    // Fetch all participant user names from Firestore
+    debugPrint('Trip members: ${widget.trip.members}');
+    final userService = UserService();
+    final usersData = await userService.getUsersData(widget.trip.members);
+    debugPrint('Users data from Firestore: $usersData');
+
+    final participantNames = <String, String>{};
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.user?.uid;
+    final currentUserName = authProvider.userModel?.name ?? 'Me';
+
+    // Add user data from Firestore
+    for (final entry in usersData.entries) {
+      participantNames[entry.key] = entry.value.name;
+      debugPrint(
+        'Adding participant from Firestore: ${entry.key} -> ${entry.value.name}',
+      );
+    }
+
+    // Ensure current user is included with correct name
+    if (currentUserId != null && !participantNames.containsKey(currentUserId)) {
+      participantNames[currentUserId] = currentUserName;
+      debugPrint('Adding current user: $currentUserId -> $currentUserName');
+    }
+
+    // For any missing participants, try to get basic info or use fallback
+    for (final memberId in widget.trip.members) {
+      if (!participantNames.containsKey(memberId)) {
+        if (memberId == currentUserId) {
+          participantNames[memberId] = currentUserName;
+        } else {
+          final shortId =
+              memberId.length > 8 ? memberId.substring(0, 8) : memberId;
+          participantNames[memberId] = ' $shortId';
+        }
+        debugPrint(
+          'Adding fallback name for: $memberId -> ${participantNames[memberId]}',
+        );
+      }
+    }
+
+    debugPrint('Final participant names map: $participantNames');
 
     final result = await Navigator.push(
       context,
@@ -132,6 +170,25 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     }
 
     return grouped;
+  }
+
+  Map<String, double> _calculateMemberBalances() {
+    final balances = <String, double>{};
+
+    // Initialize balances for all members to 0
+    for (final memberId in widget.trip.members) {
+      balances[memberId] = 0.0;
+    }
+
+    // Add up all expenses paid by each member
+    for (final expense in _expenses) {
+      final paidById = expense.paidById;
+      if (paidById != null && balances.containsKey(paidById)) {
+        balances[paidById] = (balances[paidById] ?? 0.0) + expense.amount;
+      }
+    }
+
+    return balances;
   }
 
   @override
@@ -469,6 +526,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = authProvider.user?.uid;
     final currentUserName = authProvider.userModel?.name ?? 'Me';
+
+    // Calculate member balances
+    final balances = _calculateMemberBalances();
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 0),
       itemCount: members.length,
@@ -477,6 +538,8 @@ class _TripDetailScreenState extends State<TripDetailScreen>
         final memberId = members[index];
         final isMe = memberId == currentUserId;
         final displayName = isMe ? '$currentUserName (me)' : memberId;
+        final balance = balances[memberId] ?? 0.0;
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
@@ -503,9 +566,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
               ),
               trailing: Text(
-                '$currency 0.00',
-                style: const TextStyle(
-                  color: Colors.white,
+                '$currency ${balance.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: balance > 0 ? Colors.green : Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),

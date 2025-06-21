@@ -5,7 +5,9 @@ import '../../../core/utils/app_utils.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
 import 'create_trip_screen.dart';
-import 'add_trip_screen.dart';
+import '../../../features/expenses/screens/add_expense_screen.dart';
+import '../../../core/services/mongo_db_service.dart';
+import '../../../core/services/user_service.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -110,9 +112,48 @@ class _GroupsScreenState extends State<GroupsScreen> {
       elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // Navigate to trip details screen
-          // To be implemented
+        onTap: () async {
+          final userService = UserService();
+          final usersData = await userService.getUsersData(group.memberIds);
+          final participantNames = <String, String>{};
+          final authProvider = Provider.of<AuthProvider>(
+            context,
+            listen: false,
+          );
+          final currentUserId = authProvider.user?.uid;
+          final currentUserName = authProvider.userModel?.name ?? 'Me';
+
+          // Add user data from Firestore
+          for (final entry in usersData.entries) {
+            participantNames[entry.key] = entry.value.name;
+          }
+
+          // Ensure current user is included with correct name
+          if (currentUserId != null &&
+              !participantNames.containsKey(currentUserId)) {
+            participantNames[currentUserId] = currentUserName;
+          }
+
+          // For any missing participants, use fallback names
+          for (final memberId in group.memberIds) {
+            if (!participantNames.containsKey(memberId)) {
+              if (memberId == currentUserId) {
+                participantNames[memberId] = currentUserName;
+              } else {
+                participantNames[memberId] = 'User ${memberId.substring(0, 8)}';
+              }
+            }
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => AddExpenseScreen(
+                    groupId: group.id,
+                    participants: group.memberIds,
+                    participantNames: participantNames,
+                  ),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -176,10 +217,49 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 ],
               ),
               FloatingActionButton(
-                onPressed: () {
+                onPressed: () async {
+                  final userService = UserService();
+                  final usersData = await userService.getUsersData(
+                    group.memberIds,
+                  );
+                  final participantNames = <String, String>{};
+                  final authProvider = Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final currentUserId = authProvider.user?.uid;
+                  final currentUserName = authProvider.userModel?.name ?? 'Me';
+
+                  // Add user data from Firestore
+                  for (final entry in usersData.entries) {
+                    participantNames[entry.key] = entry.value.name;
+                  }
+
+                  // Ensure current user is included with correct name
+                  if (currentUserId != null &&
+                      !participantNames.containsKey(currentUserId)) {
+                    participantNames[currentUserId] = currentUserName;
+                  }
+
+                  // For any missing participants, use fallback names
+                  for (final memberId in group.memberIds) {
+                    if (!participantNames.containsKey(memberId)) {
+                      if (memberId == currentUserId) {
+                        participantNames[memberId] = currentUserName;
+                      } else {
+                        participantNames[memberId] =
+                            'User ${memberId.substring(0, 8)}';
+                      }
+                    }
+                  }
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => AddTripScreen(groupId: group.id),
+                      builder:
+                          (_) => AddExpenseScreen(
+                            groupId: group.id,
+                            participants: group.memberIds,
+                            participantNames: participantNames,
+                          ),
                     ),
                   );
                 },

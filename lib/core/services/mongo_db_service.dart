@@ -381,7 +381,22 @@ class MongoDBService {
     await connect();
     final users = collection(usersCollection);
     if (users == null) return {};
-    final result = await users.find(where.oneFrom('uid', userIds)).toList();
+    // Try to fetch by 'uid' first
+    var result = await users.find(where.oneFrom('uid', userIds)).toList();
+    if (result.isEmpty) {
+      // If nothing found, try by '_id' (ObjectId)
+      try {
+        final objectIds = userIds.map((id) => ObjectId.parse(id)).toList();
+        result = await users.find(where.oneFrom('_id', objectIds)).toList();
+        return {
+          for (var user in result)
+            user['_id'].toHexString(): user['name'] as String,
+        };
+      } catch (e) {
+        // If parsing fails, just return empty
+        return {};
+      }
+    }
     return {
       for (var user in result) user['uid'] as String: user['name'] as String,
     };

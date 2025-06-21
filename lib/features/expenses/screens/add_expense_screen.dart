@@ -3,7 +3,6 @@ import 'package:hisabkitab/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/expenses_provider.dart';
-import '../../../core/services/user_service.dart';
 
 enum SplitType { equally, asParts, asAmount }
 
@@ -41,6 +40,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('AddExpenseScreen initState:');
+    debugPrint('Participants: ${widget.participants}');
+    debugPrint('ParticipantNames: ${widget.participantNames}');
     _dateController.text = DateFormat('MMM d, yyyy').format(_selectedDate);
     _initializeParticipantControllers();
   }
@@ -140,15 +142,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       case SplitType.equally:
         final activeParticipants = widget.participants.length;
         if (activeParticipants > 0) {
-          // Calculate base amount and remainder
-          final baseAmount = (totalAmount / activeParticipants).floorToDouble();
-          final remainder = totalAmount - (baseAmount * activeParticipants);
+          final equalAmount = totalAmount / activeParticipants;
+          var remainingAmount = totalAmount;
 
-          // Distribute the remainder to make the total exact
-          for (var i = 0; i < widget.participants.length; i++) {
+          // Distribute equal amounts to all but the last participant
+          for (var i = 0; i < widget.participants.length - 1; i++) {
             final userId = widget.participants[i];
-            final amount = baseAmount + (i < remainder ? 1 : 0);
+            final amount = double.parse(equalAmount.toStringAsFixed(2));
             _participantAmountControllers[userId]?.text = amount
+                .toStringAsFixed(2);
+            remainingAmount -= amount;
+          }
+
+          // Give remaining amount to the last participant to ensure total matches
+          if (widget.participants.isNotEmpty) {
+            final lastUserId = widget.participants.last;
+            _participantAmountControllers[lastUserId]?.text = remainingAmount
                 .toStringAsFixed(2);
           }
         }
@@ -159,24 +168,27 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           (sum, parts) => sum + parts,
         );
         if (totalParts > 0) {
-          // Calculate base amount and remainder
-          final baseAmount = (totalAmount / totalParts).floorToDouble();
+          final amountPerPart = totalAmount / totalParts;
           var remainingAmount = totalAmount;
 
           // Distribute amounts to all but the last participant
           for (var i = 0; i < widget.participants.length - 1; i++) {
             final userId = widget.participants[i];
             final parts = _participantParts[userId] ?? 1;
-            final amount = (baseAmount * parts).floorToDouble();
+            final amount = double.parse(
+              (amountPerPart * parts).toStringAsFixed(2),
+            );
             _participantAmountControllers[userId]?.text = amount
                 .toStringAsFixed(2);
             remainingAmount -= amount;
           }
 
-          // Give remaining amount to the last participant
-          final lastUserId = widget.participants.last;
-          _participantAmountControllers[lastUserId]?.text = remainingAmount
-              .toStringAsFixed(2);
+          // Give remaining amount to the last participant to ensure total matches
+          if (widget.participants.isNotEmpty) {
+            final lastUserId = widget.participants.last;
+            _participantAmountControllers[lastUserId]?.text = remainingAmount
+                .toStringAsFixed(2);
+          }
         }
         break;
       case SplitType.asAmount:
@@ -402,6 +414,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         items:
                             widget.participants.map((userId) {
+                              final authProvider = Provider.of<AuthProvider>(
+                                context,
+                                listen: false,
+                              );
+                              final currentUserId = authProvider.user?.uid;
+                              final currentUserName =
+                                  authProvider.userModel?.name ?? 'Me';
                               String name;
                               if (userId == currentUserId) {
                                 name = '$currentUserName (me)';
