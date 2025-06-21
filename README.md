@@ -40,4 +40,4 @@ This project is currently in active development.
 
 ## License
 [MIT License](LICENSE)
-# HisabKitab
+# HisabKitab by Ekraj Ghimire
