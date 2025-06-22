@@ -1,0 +1,13 @@
+{
+  "name": "hisabkitab",
+  "version": "1.0.0",
+  "description": "Flutter expense tracking app with Firebase Functions",
+  "scripts": {
+    "functions:install": "cd functions && npm install",
+    "functions:serve": "cd functions && npm run serve",
+    "functions:deploy": "cd functions && npm run deploy",
+    "functions:build": "cd functions && npm run build",
+    "functions:lint": "cd functions && npm run lint"
+  },
+  "private": true
+}
