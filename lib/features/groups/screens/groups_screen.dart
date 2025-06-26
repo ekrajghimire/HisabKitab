@@ -6,7 +6,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../providers/groups_provider.dart';
 import 'create_trip_screen.dart';
 import '../../../features/expenses/screens/add_expense_screen.dart';
-import '../../../core/services/mongo_db_service.dart';
 import '../../../core/services/user_service.dart';
 
 class GroupsScreen extends StatefulWidget {

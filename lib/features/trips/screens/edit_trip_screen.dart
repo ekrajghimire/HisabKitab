@@ -5,6 +5,7 @@ import '../../../models/trip_model.dart';
 import '../providers/trips_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../models/user_model.dart';
+import '../../../core/constants/currency_constants.dart';
 
 class EditTripScreen extends StatefulWidget {
   final TripModel trip;
@@ -240,12 +241,25 @@ class _EditTripScreenState extends State<EditTripScreen> {
                 labelText: 'Currency',
                 border: OutlineInputBorder(),
               ),
-              items: const [
-                DropdownMenuItem(value: '₹', child: Text('INR (₹)')),
-                DropdownMenuItem(value: '\$', child: Text('USD (\$)')),
-                DropdownMenuItem(value: '€', child: Text('EUR (€)')),
-                DropdownMenuItem(value: '£', child: Text('GBP (£)')),
-              ],
+              items:
+                  CurrencyConstants.currencies.keys.map((String code) {
+                    return DropdownMenuItem<String>(
+                      value: code,
+                      child: Row(
+                        children: [
+                          Text(
+                            CurrencyConstants.getSymbol(code),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(code),
+                        ],
+                      ),
+                    );
+                  }).toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() => _currency = value);

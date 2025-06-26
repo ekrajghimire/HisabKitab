@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/trips_provider.dart';
+import '../../../core/constants/currency_constants.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({super.key});
@@ -22,14 +23,11 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
 
   bool _isLoading = false;
   String? _errorMessage;
-  String _selectedCurrency = '₹';
+  String _selectedCurrency = 'INR'; // Default to INR
 
   // Date fields for trip
   final DateTime _startDate = DateTime.now();
   final DateTime _endDate = DateTime.now().add(const Duration(days: 7));
-
-  // Supported currencies
-  final List<String> _currencies = ['₹', '\$', '€', '£', '¥'];
 
   // Current step in the creation process
   int _currentStep = 0;
@@ -333,52 +331,77 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Currency selection
         Text(
           'Select a currency for your trip',
           style: TextStyle(color: Colors.grey.shade300),
         ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children:
-              _currencies.map((currency) {
-                final isSelected = currency == _selectedCurrency;
-                return InkWell(
-                  onTap: () {
-                    setState(() {
-                      _selectedCurrency = currency;
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected
-                              ? Colors.blue.withOpacity(0.2)
-                              : Colors.grey.shade800,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          isSelected
-                              ? Border.all(color: Colors.blue, width: 2)
-                              : null,
-                    ),
-                    child: Text(
-                      currency,
-                      style: TextStyle(
-                        color: isSelected ? Colors.blue : Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade900,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade800),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedCurrency,
+              isExpanded: true,
+              dropdownColor: Colors.grey.shade900,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              items:
+                  CurrencyConstants.currencies.keys.map((String code) {
+                    return DropdownMenuItem<String>(
+                      value: code,
+                      child: Row(
+                        children: [
+                          Text(
+                            CurrencyConstants.getSymbol(code),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(code),
+                        ],
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedCurrency = newValue;
+                  });
+                }
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Preview of selected currency
+        Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Selected: ${CurrencyConstants.getFormattedCurrency(_selectedCurrency)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

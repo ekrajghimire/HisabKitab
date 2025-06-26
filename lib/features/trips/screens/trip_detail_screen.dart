@@ -9,6 +9,7 @@ import '../../expenses/screens/add_expense_screen.dart';
 import '../providers/trips_provider.dart';
 import '../../../core/services/mongo_db_service.dart';
 import '../../../core/services/user_service.dart';
+import '../../../core/constants/currency_constants.dart';
 
 class TripDetailScreen extends StatefulWidget {
   final TripModel trip;
@@ -183,7 +184,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     // Add up all expenses paid by each member
     for (final expense in _expenses) {
       final paidById = expense.paidById;
-      if (paidById != null && balances.containsKey(paidById)) {
+      if (balances.containsKey(paidById)) {
         balances[paidById] = (balances[paidById] ?? 0.0) + expense.amount;
       }
     }
@@ -331,7 +332,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            amount,
+            '${CurrencyConstants.getSymbol(widget.trip.currency)}${_myExpensesTotal.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
@@ -463,7 +464,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '₹${expense.amount.toStringAsFixed(2)}',
+                  '${CurrencyConstants.getSymbol(widget.trip.currency)}${expense.amount.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.primary,
@@ -566,7 +567,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                 ),
               ),
               trailing: Text(
-                '$currency ${balance.toStringAsFixed(2)}',
+                '${CurrencyConstants.getSymbol(currency)} ${balance.toStringAsFixed(2)}',
                 style: TextStyle(
                   color: balance > 0 ? Colors.green : Colors.white,
                   fontWeight: FontWeight.bold,

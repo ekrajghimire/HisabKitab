@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1027925552365-ojk2abr79flmgumqkqu0ie0q5jpaihhc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hisabkitab",
+            "certificate_hash": "5fe1a6e9e90757a7fc51cd5206a662e0665ca707"
+          }
+        },
+        {
           "client_id": "1027925552365-n5qr5hpmmei93d4oab0jp660kp23rpq5.apps.googleusercontent.com",
           "client_type": 3
         }
