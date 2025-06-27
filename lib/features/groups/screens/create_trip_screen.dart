@@ -14,7 +14,6 @@ class CreateTripScreen extends StatefulWidget {
 class _CreateTripScreenState extends State<CreateTripScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
 
   // Add controllers for participant fields
   final List<TextEditingController> _participantControllers = [
@@ -35,7 +34,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
     for (var controller in _participantControllers) {
       controller.dispose();
     }
@@ -92,13 +90,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
         // Create trip directly in local storage
         final trip = await tripsProvider.createTrip(
           name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
           groupId: groupId,
           createdBy: authProvider.user!.uid,
           startDate: _startDate,
           endDate: _endDate,
           currency: _selectedCurrency,
           members: members,
+          description: '',
         );
 
         if (!mounted) return;
@@ -280,32 +278,6 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               }
               return null;
             },
-          ),
-
-          const SizedBox(height: 16),
-
-          // Trip Description
-          TextFormField(
-            controller: _descriptionController,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'Description (Optional)',
-              hintText: 'Add some details about your trip',
-              labelStyle: const TextStyle(color: Colors.grey),
-              hintStyle: TextStyle(color: Colors.grey.shade600),
-              prefixIcon: const Icon(Icons.description, color: Colors.grey),
-              filled: true,
-              fillColor: Colors.grey.shade900,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.blue),
-              ),
-            ),
-            maxLines: 3,
           ),
 
           // Error message

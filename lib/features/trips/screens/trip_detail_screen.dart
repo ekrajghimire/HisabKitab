@@ -275,12 +275,12 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                       children: [
                         _buildTotalCard(
                           'My Expenses',
-                          '₹${_myExpensesTotal.toStringAsFixed(2)}',
+                          '${CurrencyConstants.getSymbol(widget.trip.currency)}${_myExpensesTotal.toStringAsFixed(2)}',
                           Theme.of(context).colorScheme.primary,
                         ),
                         _buildTotalCard(
                           'Total Expenses',
-                          '₹${_totalExpenses.toStringAsFixed(2)}',
+                          '${CurrencyConstants.getSymbol(widget.trip.currency)}${_totalExpenses.toStringAsFixed(2)}',
                           Theme.of(context).colorScheme.secondary,
                         ),
                       ],
@@ -332,7 +332,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            '${CurrencyConstants.getSymbol(widget.trip.currency)}${_myExpensesTotal.toStringAsFixed(2)}',
+            amount,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,

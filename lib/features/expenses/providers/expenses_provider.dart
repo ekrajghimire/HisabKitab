@@ -22,6 +22,20 @@ class ExpensesProvider with ChangeNotifier {
     return expenses.fold(0, (sum, expense) => sum + expense.amount);
   }
 
+  double getPersonalSpending(String groupId, String userId) {
+    final expenses = _groupExpenses[groupId] ?? [];
+    return expenses
+        .where((expense) => expense.paidById == userId)
+        .fold(0, (sum, expense) => sum + expense.amount);
+  }
+
+  double getPersonalShare(String groupId, String userId) {
+    final expenses = _groupExpenses[groupId] ?? [];
+    return expenses.fold(0.0, (sum, expense) {
+      return sum + (expense.splitAmounts[userId] ?? 0.0);
+    });
+  }
+
   Map<String, double> getGroupBalances(String groupId) {
     final expenses = _groupExpenses[groupId] ?? [];
     final Map<String, double> balances = {};

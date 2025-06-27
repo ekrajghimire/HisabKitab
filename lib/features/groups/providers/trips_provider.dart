@@ -43,7 +43,7 @@ class TripsProvider with ChangeNotifier {
   // Create new trip
   Future<TripModel?> createTrip({
     required String name,
-    required String description,
+    String description = '',
     required String groupId,
     required String createdBy,
     required DateTime startDate,
