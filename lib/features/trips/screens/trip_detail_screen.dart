@@ -26,12 +26,14 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   bool _isLoading = true;
   List<ExpenseModel> _expenses = [];
   String? _userId;
+  Map<String, String> _participantNames = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadExpenses();
+    _loadParticipantNames();
   }
 
   Future<void> _loadExpenses() async {
@@ -49,6 +51,41 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     setState(() {
       _expenses = expensesProvider.getGroupExpenses(widget.trip.groupId);
       _isLoading = false;
+    });
+  }
+
+  Future<void> _loadParticipantNames() async {
+    final userService = UserService();
+    final usersData = await userService.getUsersData(widget.trip.members);
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.user?.uid;
+    final currentUserName = authProvider.userModel?.name ?? 'Me';
+
+    setState(() {
+      _participantNames = {};
+      // Add user data from Firestore
+      for (final entry in usersData.entries) {
+        _participantNames[entry.key] = entry.value.name;
+      }
+
+      // Ensure current user is included with correct name
+      if (currentUserId != null) {
+        _participantNames[currentUserId] = currentUserName;
+      }
+
+      // For any missing participants, use a fallback
+      for (final memberId in widget.trip.members) {
+        if (!_participantNames.containsKey(memberId)) {
+          if (memberId == currentUserId) {
+            _participantNames[memberId] = currentUserName;
+          } else {
+            final shortId =
+                memberId.length > 8 ? memberId.substring(0, 8) : memberId;
+            _participantNames[memberId] = shortId;
+          }
+        }
+      }
     });
   }
 
@@ -414,6 +451,9 @@ class _TripDetailScreenState extends State<TripDetailScreen>
 
   Widget _buildExpenseItem(ExpenseModel expense) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final payerName = _participantNames[expense.paidById] ?? 'Unknown';
+    final isCurrentUser = expense.paidById == _userId;
+    final displayName = isCurrentUser ? 'You' : payerName;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -450,7 +490,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    expense.category ?? 'Uncategorized',
+                    'Paid by $displayName',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(
                         context,
