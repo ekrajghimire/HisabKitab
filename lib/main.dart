@@ -4,12 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/foundation.dart';
+import 'firebase_options.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/mongo_db_service.dart';
-import 'firebase_options.dart';
+
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/settings/providers/theme_provider.dart';
