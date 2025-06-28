@@ -27,35 +27,35 @@ lib/
 
 ## Implementation Phases
 
-### Phase 1: Core Setup & Authentication (2 weeks)
+### Phase 1: Core Setup & Authentication
 - Project setup and dependency configuration
 - Theme and style definition
 - Core UI components
 - User authentication (signup, login, password reset)
 - Data models definition
 
-### Phase 2: Group & Expense Management (3 weeks)
+### Phase 2: Group & Expense Management
 - Group creation and management
 - Expense entry and categorization
 - Expense splitting functionality
 - Basic settlement tracking
 - Offline support foundation
 
-### Phase 3: Advanced Features (3 weeks)
+### Phase 3: Advanced Features
 - Multi-currency support
 - Image attachments for expenses
 - Bill scanning with OCR
 - Export functionality
 - Activity timeline
 
-### Phase 4: Analytics & Refinement (2 weeks)
+### Phase 4: Analytics & Refinement
 - Spending insights and charts
 - Budget planning features
 - Performance optimization
 - UI/UX refinement
 - Beta testing
 
-### Phase 5: Final Release Preparation (1 week)
+### Phase 5: Final Release Preparation
 - Bug fixes from beta testing
 - Final UI polish
 - App store listing preparation

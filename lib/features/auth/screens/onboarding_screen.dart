@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import 'login_screen.dart';
@@ -26,7 +27,22 @@ class OnboardingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Spacer(flex: 2),
+            const Spacer(flex: 1),
+
+            // Logo
+            SvgPicture.asset(
+              'assets/images/welcome-1.svg',
+              width: 150,
+              height: 200,
+              placeholderBuilder:
+                  (context) => const SizedBox(
+                    width: 150,
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+            ),
+
+            const SizedBox(height: 32),
 
             // Welcome text
             Text(
@@ -38,25 +54,13 @@ class OnboardingScreen extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 40),
-
-            // Blue circle image placeholder
-            Container(
-              width: 160,
-              height: 160,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary,
-              ),
-            ),
-
-            const SizedBox(height: 40),
+            const SizedBox(height: 16),
 
             // Description
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Text(
-                'Easily share expenses with your friends or housemates.',
+                'Easily share expenses with your friends during travel.',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyLarge?.copyWith(color: Colors.grey[400]),
@@ -64,7 +68,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
             ),
 
-            const Spacer(),
+            const Spacer(flex: 2),
 
             // Terms & Conditions
             Padding(
@@ -125,7 +129,7 @@ class OnboardingScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
           ],
         ),
       ),

@@ -7,7 +7,6 @@ import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expenses_provider.dart';
 import '../../expenses/screens/add_expense_screen.dart';
 import '../providers/trips_provider.dart';
-import '../../../core/services/mongo_db_service.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/constants/currency_constants.dart';
 
