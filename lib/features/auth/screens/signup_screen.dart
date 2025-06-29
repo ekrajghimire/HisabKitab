@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hisabkitab/core/constants/app_constants.dart';
 import 'package:provider/provider.dart';
 import '../../../core/utils/app_utils.dart';
 import '../providers/auth_provider.dart';
@@ -72,20 +73,24 @@ class _SignupScreenState extends State<SignupScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const SizedBox(height: 0),
                   // App Logo
-                  Icon(
-                    Icons.account_balance_wallet,
-                    size: 60,
-                    color: Theme.of(context).colorScheme.primary,
+                  Text(
+                    AppConstants.appName,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 36,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-
+                  const SizedBox(height: 30),
                   // App Name
                   Text(
                     'Create Account',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Colors.blue,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
