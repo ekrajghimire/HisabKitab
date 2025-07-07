@@ -95,50 +95,50 @@ class ProfileScreen extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
-                ListTile(
-                  leading: Icon(
-                    Icons.edit,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    'Edit Profile',
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Update your personal information',
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                  onTap: () {
-                    // Edit profile to be implemented
-                  },
-                ),
-                Divider(color: Theme.of(context).dividerColor.withOpacity(0.3)),
-                ListTile(
-                  leading: Icon(
-                    Icons.lock,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    'Change Password',
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Update your account password',
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
-                    ),
-                  ),
-                  onTap: () {
-                    // Change password to be implemented
-                  },
-                ),
-                Divider(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+                // ListTile(
+                //   leading: Icon(
+                //     Icons.edit,
+                //     color: Theme.of(context).colorScheme.primary,
+                //   ),
+                //   title: Text(
+                //     'Edit Profile',
+                //     style: TextStyle(
+                //       color: Theme.of(context).textTheme.bodyLarge?.color,
+                //     ),
+                //   ),
+                //   subtitle: Text(
+                //     'Update your personal information',
+                //     style: TextStyle(
+                //       color: Theme.of(context).textTheme.bodyMedium?.color,
+                //     ),
+                //   ),
+                //   onTap: () {
+                //     // Edit profile to be implemented
+                //   },
+                // ),
+                // Divider(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+                // ListTile(
+                //   leading: Icon(
+                //     Icons.lock,
+                //     color: Theme.of(context).colorScheme.primary,
+                //   ),
+                //   title: Text(
+                //     'Change Password',
+                //     style: TextStyle(
+                //       color: Theme.of(context).textTheme.bodyLarge?.color,
+                //     ),
+                //   ),
+                //   subtitle: Text(
+                //     'Update your account password',
+                //     style: TextStyle(
+                //       color: Theme.of(context).textTheme.bodyMedium?.color,
+                //     ),
+                //   ),
+                //   onTap: () {
+                //     // Change password to be implemented
+                //   },
+                // ),
+                // Divider(color: Theme.of(context).dividerColor.withOpacity(0.3)),
                 ListTile(
                   leading: Icon(
                     Icons.logout,

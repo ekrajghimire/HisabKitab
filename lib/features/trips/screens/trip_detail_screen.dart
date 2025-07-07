@@ -126,7 +126,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
       } else {
         final shortId =
             memberId.length > 8 ? memberId.substring(0, 8) : memberId;
-        participantNames[memberId] = 'User $shortId';
+        participantNames[memberId] = shortId;
       }
     }
 

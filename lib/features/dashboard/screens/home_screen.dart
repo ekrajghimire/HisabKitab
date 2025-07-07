@@ -102,11 +102,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   });
                 },
-                backgroundColor: const Color(0xFF003366),
-                shape: const CircleBorder(
-                  side: BorderSide(color: Colors.blue, width: 2.0),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: CircleBorder(
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2.0,
+                  ),
                 ),
-                child: const Icon(Icons.add, color: Colors.blue, size: 36),
+                child: Icon(
+                  Icons.add,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: 36,
+                ),
               )
               : null,
       bottomNavigationBar: BottomNavigationBar(
