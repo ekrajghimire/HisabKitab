@@ -3,6 +3,7 @@ import 'package:hisabkitab/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/expenses_provider.dart';
+import '../../../core/constants/currency_constants.dart';
 
 enum SplitType { equally, asParts, asAmount }
 
@@ -10,11 +11,13 @@ class AddExpenseScreen extends StatefulWidget {
   final String groupId;
   final List<String> participants;
   final Map<String, String> participantNames;
+  final String currency;
 
   const AddExpenseScreen({
     required this.groupId,
     required this.participants,
     required this.participantNames,
+    required this.currency,
     super.key,
   });
 
@@ -36,10 +39,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   SplitType _splitType = SplitType.equally;
   bool _isLoading = false;
   String? _errorMessage;
+  late String _currencySymbol;
 
   @override
   void initState() {
     super.initState();
+    _currencySymbol = CurrencyConstants.getSymbol(widget.currency);
     debugPrint('AddExpenseScreen initState:');
     debugPrint('Participants: ${widget.participants}');
     debugPrint('ParticipantNames: ${widget.participantNames}');
@@ -354,7 +359,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Amount field
+                      // Amount field with currency
                       TextFormField(
                         controller: _amountController,
                         style: const TextStyle(color: Colors.white),
@@ -363,9 +368,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         decoration: InputDecoration(
                           labelText: 'Amount',
-                          prefixIcon: const Icon(
-                            Icons.attach_money,
-                            color: Colors.grey,
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 12,
+                            ),
+                            child: Text(
+                              _currencySymbol,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
                           labelStyle: const TextStyle(color: Colors.grey),
                           filled: true,
@@ -488,48 +502,161 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Split',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Split',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (_amountController.text.isNotEmpty)
+                                  Text(
+                                    'Total: \$${_amountController.text}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 16),
-                            SegmentedButton<SplitType>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: SplitType.equally,
-                                  label: Text('Equally'),
-                                ),
-                                ButtonSegment(
-                                  value: SplitType.asParts,
-                                  label: Text('As Parts'),
-                                ),
-                                ButtonSegment(
-                                  value: SplitType.asAmount,
-                                  label: Text('As Amount'),
-                                ),
-                              ],
-                              selected: {_splitType},
-                              onSelectionChanged: (
-                                Set<SplitType> newSelection,
-                              ) {
-                                setState(() {
-                                  _splitType = newSelection.first;
-                                  _updateSplitAmounts();
-                                });
-                              },
-                              style: ButtonStyle(
-                                backgroundColor:
-                                    WidgetStateProperty.resolveWith<Color>(
-                                      (states) =>
-                                          states.contains(WidgetState.selected)
-                                              ? Colors.blue
-                                              : Colors.transparent,
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isSmallScreen =
+                                    constraints.maxWidth < 360;
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    SegmentedButton<SplitType>(
+                                      segments: [
+                                        ButtonSegment(
+                                          value: SplitType.equally,
+                                          label: Text(
+                                            isSmallScreen
+                                                ? 'Equal'
+                                                : 'Equal Split',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          icon: Icon(
+                                            Icons.balance,
+                                            size: isSmallScreen ? 16 : 18,
+                                          ),
+                                        ),
+                                        ButtonSegment(
+                                          value: SplitType.asParts,
+                                          label: Text(
+                                            isSmallScreen
+                                                ? 'Parts'
+                                                : 'By Parts',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          icon: Icon(
+                                            Icons.pie_chart,
+                                            size: isSmallScreen ? 16 : 18,
+                                          ),
+                                        ),
+                                        ButtonSegment(
+                                          value: SplitType.asAmount,
+                                          label: Text(
+                                            isSmallScreen
+                                                ? 'Custom'
+                                                : 'Custom Amount',
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          icon: Icon(
+                                            Icons.edit,
+                                            size: isSmallScreen ? 16 : 18,
+                                          ),
+                                        ),
+                                      ],
+                                      selected: {_splitType},
+                                      onSelectionChanged: (
+                                        Set<SplitType> newSelection,
+                                      ) {
+                                        setState(() {
+                                          _splitType = newSelection.first;
+                                          _updateSplitAmounts();
+                                        });
+                                      },
+                                      style: ButtonStyle(
+                                        backgroundColor:
+                                            WidgetStateProperty.resolveWith<
+                                              Color
+                                            >(
+                                              (states) =>
+                                                  states.contains(
+                                                        WidgetState.selected,
+                                                      )
+                                                      ? Colors.blue
+                                                      : Colors.transparent,
+                                            ),
+                                        visualDensity: VisualDensity.compact,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        // Make the button more compact
+                                        minimumSize: WidgetStateProperty.all(
+                                          Size(0, isSmallScreen ? 36 : 40),
+                                        ),
+                                        padding: WidgetStateProperty.all(
+                                          EdgeInsets.symmetric(
+                                            horizontal: isSmallScreen ? 8 : 12,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                              ),
+                                    const SizedBox(height: 12),
+                                    // Split type explanation
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            _splitType == SplitType.equally
+                                                ? Icons.info_outline
+                                                : _splitType ==
+                                                    SplitType.asParts
+                                                ? Icons.help_outline
+                                                : Icons.edit_note,
+                                            color: Colors.blue,
+                                            size: isSmallScreen ? 16 : 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _splitType == SplitType.equally
+                                                  ? 'Split equally among all participants'
+                                                  : _splitType ==
+                                                      SplitType.asParts
+                                                  ? 'Split by parts (e.g., 2x means double share)'
+                                                  : 'Enter custom amount for each participant',
+                                              style: TextStyle(
+                                                color: Colors.blue.shade100,
+                                                fontSize:
+                                                    isSmallScreen ? 11 : 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -537,99 +664,120 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Participants list
+                      // Participants list with updated UI
                       ...widget.participants.map((userId) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade900,
-                              borderRadius: BorderRadius.circular(12),
+                        final isCurrentUser = userId == currentUserId;
+                        final name =
+                            isCurrentUser
+                                ? currentUserName
+                                : widget.participantNames[userId] ?? userId;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade900,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color:
+                                  isCurrentUser
+                                      ? Colors.blue.withOpacity(0.3)
+                                      : Colors.transparent,
+                              width: 1,
                             ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    widget.participantNames[userId] ??
-                                        'Unknown User',
-                                    style: const TextStyle(color: Colors.white),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  isCurrentUser ? '$name (me)' : name,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight:
+                                        isCurrentUser
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
                                   ),
                                 ),
-                                if (_splitType == SplitType.asParts) ...[
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.remove,
-                                      color: Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _participantParts[userId] =
-                                            (_participantParts[userId] ?? 1) -
-                                            1;
-                                        if ((_participantParts[userId] ?? 0) <
-                                            0) {
-                                          _participantParts[userId] = 0;
-                                        }
-                                        _updateSplitAmounts();
-                                      });
-                                    },
+                              ),
+                              if (_splitType == SplitType.asParts) ...[
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.remove_circle_outline,
+                                    color: Colors.grey,
                                   ),
-                                  Text(
+                                  onPressed: () {
+                                    setState(() {
+                                      _participantParts[userId] =
+                                          (_participantParts[userId] ?? 1) - 1;
+                                      if ((_participantParts[userId] ?? 0) <
+                                          0) {
+                                        _participantParts[userId] = 0;
+                                      }
+                                      _updateSplitAmounts();
+                                    });
+                                  },
+                                ),
+                                Container(
+                                  width: 40,
+                                  alignment: Alignment.center,
+                                  child: Text(
                                     '${_participantParts[userId] ?? 1}x',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.add_circle_outline,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _participantParts[userId] =
+                                          (_participantParts[userId] ?? 1) + 1;
+                                      _updateSplitAmounts();
+                                    });
+                                  },
+                                ),
+                              ] else ...[
+                                SizedBox(
+                                  width: 100,
+                                  child: TextFormField(
+                                    controller:
+                                        _participantAmountControllers[userId],
                                     style: const TextStyle(color: Colors.white),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.add,
-                                      color: Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _participantParts[userId] =
-                                            (_participantParts[userId] ?? 1) +
-                                            1;
-                                        _updateSplitAmounts();
-                                      });
-                                    },
-                                  ),
-                                ] else ...[
-                                  SizedBox(
-                                    width: 100,
-                                    child: TextFormField(
-                                      controller:
-                                          _participantAmountControllers[userId],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                      enabled: _splitType == SplitType.asAmount,
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 0,
-                                            ),
-                                        filled: true,
-                                        fillColor:
-                                            _splitType == SplitType.asAmount
-                                                ? Colors.grey.shade800
-                                                : Colors.grey.shade900,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          borderSide: BorderSide.none,
+                                    enabled: _splitType == SplitType.asAmount,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
                                         ),
+                                    textAlign: TextAlign.right,
+                                    decoration: InputDecoration(
+                                      prefixText: _currencySymbol,
+                                      prefixStyle: TextStyle(
+                                        color: Colors.grey.shade400,
+                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                      filled: true,
+                                      fillColor:
+                                          _splitType == SplitType.asAmount
+                                              ? Colors.grey.shade800
+                                              : Colors.grey.shade900,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide.none,
                                       ),
                                     ),
                                   ),
-                                ],
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                         );
                       }),

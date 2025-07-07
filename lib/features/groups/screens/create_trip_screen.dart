@@ -111,16 +111,14 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
             SnackBar(
               content: Text('Trip "${trip.name}" created successfully!'),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
+              duration: const Duration(seconds: 1), // Reduced duration
             ),
           );
 
-          // Allow the snackbar to be visible briefly before navigating
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              Navigator.of(context).pop(trip);
-            }
-          });
+          // Navigate immediately without delay for faster UX
+          if (mounted) {
+            Navigator.of(context).pop(trip);
+          }
         } else {
           setState(() {
             _errorMessage =
@@ -132,7 +130,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           _isLoading = false;
           _errorMessage = 'Error creating trip: ${e.toString()}';
         });
-        print('Error creating trip: $e');
+        debugPrint('Error creating trip: $e');
       }
     }
   }

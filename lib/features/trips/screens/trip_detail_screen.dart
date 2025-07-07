@@ -6,7 +6,7 @@ import '../../../models/expense_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../expenses/providers/expenses_provider.dart';
 import '../../expenses/screens/add_expense_screen.dart';
-import '../providers/trips_provider.dart';
+import '../../groups/providers/trips_provider.dart';
 import '../../../core/services/user_service.dart';
 import '../../../core/constants/currency_constants.dart';
 
@@ -98,7 +98,10 @@ class _TripDetailScreenState extends State<TripDetailScreen>
     if (result == true) {
       // Refresh trip details if changes were made
       final tripsProvider = Provider.of<TripsProvider>(context, listen: false);
-      await tripsProvider.fetchTrips();
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.user != null) {
+        await tripsProvider.fetchUserTrips(authProvider.user!.uid);
+      }
 
       // Show success message
       if (mounted) {
@@ -110,49 +113,26 @@ class _TripDetailScreenState extends State<TripDetailScreen>
   }
 
   Future<void> _addExpense() async {
-    // Fetch all participant user names from Firestore
-    debugPrint('Trip members: ${widget.trip.members}');
-    final userService = UserService();
-    final usersData = await userService.getUsersData(widget.trip.members);
-    debugPrint('Users data from Firestore: $usersData');
-
-    final participantNames = <String, String>{};
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = authProvider.user?.uid;
     final currentUserName = authProvider.userModel?.name ?? 'Me';
 
-    // Add user data from Firestore
-    for (final entry in usersData.entries) {
-      participantNames[entry.key] = entry.value.name;
-      debugPrint(
-        'Adding participant from Firestore: ${entry.key} -> ${entry.value.name}',
-      );
-    }
+    // Create initial participant names with fallbacks for immediate navigation
+    final participantNames = <String, String>{};
 
-    // Ensure current user is included with correct name
-    if (currentUserId != null && !participantNames.containsKey(currentUserId)) {
-      participantNames[currentUserId] = currentUserName;
-      debugPrint('Adding current user: $currentUserId -> $currentUserName');
-    }
-
-    // For any missing participants, try to get basic info or use fallback
     for (final memberId in widget.trip.members) {
-      if (!participantNames.containsKey(memberId)) {
-        if (memberId == currentUserId) {
-          participantNames[memberId] = currentUserName;
-        } else {
-          final shortId =
-              memberId.length > 8 ? memberId.substring(0, 8) : memberId;
-          participantNames[memberId] = ' $shortId';
-        }
-        debugPrint(
-          'Adding fallback name for: $memberId -> ${participantNames[memberId]}',
-        );
+      if (memberId == currentUserId) {
+        participantNames[memberId] = currentUserName;
+      } else {
+        final shortId =
+            memberId.length > 8 ? memberId.substring(0, 8) : memberId;
+        participantNames[memberId] = 'User $shortId';
       }
     }
 
-    debugPrint('Final participant names map: $participantNames');
+    debugPrint('Initial participant names: $participantNames');
 
+    // Navigate immediately with fallback names
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -161,6 +141,7 @@ class _TripDetailScreenState extends State<TripDetailScreen>
               groupId: widget.trip.groupId,
               participants: widget.trip.members,
               participantNames: participantNames,
+              currency: widget.trip.currency,
             ),
       ),
     );

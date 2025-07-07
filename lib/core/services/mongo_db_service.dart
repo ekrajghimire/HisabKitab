@@ -2,6 +2,7 @@ import 'package:mongo_dart/mongo_dart.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:fixnum/fixnum.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class MongoDBService {
   static final MongoDBService _instance = MongoDBService._internal();
@@ -12,6 +13,7 @@ class MongoDBService {
       'mongodb+srv://hisabkitabdb:hisabkitabpassword@hisabkitabcluster.vanbrth.mongodb.net/hisabkitab?retryWrites=true&w=majority';
   Db? _db;
   bool _isConnected = false;
+  bool _isOnline = true;
 
   // Collection names
   static const String usersCollection = 'users';
@@ -19,34 +21,76 @@ class MongoDBService {
   static const String groupsCollection = 'groups';
   static const String expensesCollection = 'expenses';
 
-  MongoDBService._internal();
+  MongoDBService._internal() {
+    // Initialize connectivity listener
+    Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+      _isOnline = result != ConnectivityResult.none;
+      if (_isOnline && !_isConnected) {
+        _connectInBackground(); // Try to reconnect when back online
+      }
+    });
+
+    // Start initial connection attempt in background
+    _connectInBackground();
+  }
 
   bool get isConnected => _isConnected;
+  bool get isOnline => _isOnline;
   Db? get db => _db;
 
   Future<void> connect() async {
-    if (_isConnected) return;
+    if (_isConnected || !_isOnline) return;
 
     try {
       debugPrint('MongoDBService: Attempting to connect...');
-      _db = await Db.create(_connectionString);
-      await _db!.open();
+
+      // Add timeout to prevent long blocking
+      await _connectWithTimeout();
+
       _isConnected = true;
       debugPrint('MongoDBService: Connected successfully');
 
-      // Verify connection by listing collections
-      final collections = await _db!.getCollectionNames();
-      debugPrint('MongoDBService: Available collections: $collections');
+      // Verify connection by listing collections (with timeout)
+      try {
+        await _verifyConnectionWithTimeout();
+      } catch (e) {
+        debugPrint('MongoDBService: Collection verification failed: $e');
+      }
 
-      // Create indexes if needed
-      await _createIndexes();
+      // Create indexes if needed (non-blocking)
+      _createIndexesInBackground();
     } catch (e, stackTrace) {
       _isConnected = false;
+      _db = null; // Clear the DB instance on connection failure
       debugPrint(
         'MongoDBService: Failed to connect: $e\nStackTrace: $stackTrace',
       );
-      rethrow;
+      // Don't rethrow - allow offline operation
     }
+  }
+
+  Future<void> _connectWithTimeout() async {
+    await Future.any([
+      () async {
+        _db = await Db.create(_connectionString);
+        await _db!.open();
+      }(),
+      Future.delayed(Duration(seconds: 10)).then((_) {
+        throw TimeoutException('Connection timeout', Duration(seconds: 10));
+      }),
+    ]);
+  }
+
+  Future<void> _verifyConnectionWithTimeout() async {
+    await Future.any([
+      () async {
+        final collections = await _db!.getCollectionNames();
+        debugPrint('MongoDBService: Available collections: $collections');
+      }(),
+      Future.delayed(Duration(seconds: 5)).then((_) {
+        throw TimeoutException('Verification timeout', Duration(seconds: 5));
+      }),
+    ]);
   }
 
   Future<void> _createIndexes() async {
@@ -66,32 +110,64 @@ class MongoDBService {
     }
   }
 
+  // Non-blocking index creation
+  void _createIndexesInBackground() {
+    _createIndexes().catchError((error) {
+      debugPrint('Background index creation failed: $error');
+    });
+  }
+
   Future<void> close() async {
     if (_isConnected && _db != null) {
       await _db!.close();
       _isConnected = false;
+      _db = null; // Clear the DB instance when closing
       debugPrint('MongoDBService: Connection closed');
     }
   }
 
   DbCollection? collection(String name) {
-    if (!_isConnected || _db == null) {
-      debugPrint('MongoDBService: Not connected. Attempting to reconnect...');
-      connect().then((_) {
-        debugPrint(
-          'MongoDBService: Reconnection ${_isConnected ? 'successful' : 'failed'}',
-        );
-      });
+    if (!_isOnline) {
+      debugPrint('MongoDBService: Device is offline');
       return null;
     }
-    return _db!.collection(name);
+
+    if (!_isConnected || _db == null) {
+      debugPrint('MongoDBService: Not connected. Attempting to reconnect...');
+      // Don't wait for connect() to complete - return null immediately
+      connect();
+      return null;
+    }
+
+    try {
+      // Check if the database is still active
+      if (_db!.state != State.open) {
+        debugPrint('MongoDBService: Database state is not open: ${_db!.state}');
+        _isConnected = false;
+        _db = null;
+        connect();
+        return null;
+      }
+      return _db!.collection(name);
+    } catch (e) {
+      debugPrint('MongoDBService: Error accessing collection: $e');
+      _isConnected = false;
+      _db = null;
+      return null;
+    }
   }
 
   // User methods
   Future<void> saveUser(Map<String, dynamic> user) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, skipping saveUser');
+      throw Exception('Not connected to MongoDB');
+    }
+
     final users = collection(usersCollection);
     if (users == null) throw Exception('Failed to access users collection');
+
     await users.updateOne(
       where.eq('uid', user['uid']),
       modify
@@ -104,17 +180,34 @@ class MongoDBService {
   }
 
   Future<Map<String, dynamic>?> getUser(String uid) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, skipping getUser');
+      return null;
+    }
+
     final users = collection(usersCollection);
     if (users == null) return null;
-    return await users.findOne(where.eq('uid', uid));
+
+    try {
+      return await users.findOne(where.eq('uid', uid));
+    } catch (e) {
+      debugPrint('Error fetching user: $e');
+      return null;
+    }
   }
 
   // Trip methods
   Future<void> saveTrip(Map<String, dynamic> trip) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, skipping saveTrip');
+      throw Exception('Not connected to MongoDB');
+    }
+
     final trips = collection(tripsCollection);
     if (trips == null) throw Exception('Failed to access trips collection');
+
     await trips.updateOne(
       where.eq('id', trip['id']),
       modify
@@ -134,18 +227,57 @@ class MongoDBService {
   }
 
   Future<List<Map<String, dynamic>>> getTripsForUser(String userId) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, returning empty list');
+      return [];
+    }
+
     final trips = collection(tripsCollection);
     if (trips == null) return [];
-    final result = await trips.find(where.eq('members', userId)).toList();
-    return result.cast<Map<String, dynamic>>();
+
+    try {
+      final result =
+          await trips.find(where.eq('members', userId)).map((doc) {
+            // Ensure the _id is converted to a string id
+            final Map<String, dynamic> map = {...doc};
+            map['id'] = doc['_id'].toHexString();
+            map.remove('_id');
+
+            // Convert Int64 timestamps to regular integers if they exist
+            if (doc['startDate'] is Int64) {
+              map['startDate'] = (doc['startDate'] as Int64).toInt();
+            }
+            if (doc['endDate'] is Int64) {
+              map['endDate'] = (doc['endDate'] as Int64).toInt();
+            }
+            if (doc['createdAt'] is Int64) {
+              map['createdAt'] = (doc['createdAt'] as Int64).toInt();
+            }
+            if (doc['updatedAt'] is Int64) {
+              map['updatedAt'] = (doc['updatedAt'] as Int64).toInt();
+            }
+
+            return map;
+          }).toList();
+      return result.cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching trips for user: $e');
+      return [];
+    }
   }
 
   // Group methods
   Future<void> saveGroup(Map<String, dynamic> group) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, skipping saveGroup');
+      throw Exception('Not connected to MongoDB');
+    }
+
     final groups = collection(groupsCollection);
     if (groups == null) throw Exception('Failed to access groups collection');
+
     await groups.updateOne(
       where.eq('id', group['id']),
       modify
@@ -163,15 +295,31 @@ class MongoDBService {
   }
 
   Future<List<Map<String, dynamic>>> getGroupsForUser(String userId) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, returning empty list');
+      return [];
+    }
+
     final groups = collection(groupsCollection);
     if (groups == null) return [];
-    final result = await groups.find(where.eq('memberIds', userId)).toList();
-    return result.cast<Map<String, dynamic>>();
+
+    try {
+      final result = await groups.find(where.eq('memberIds', userId)).toList();
+      return result.cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching groups for user: $e');
+      return [];
+    }
   }
 
   Future<void> deleteGroup(String groupId) async {
-    await connect();
+    // Don't wait for connection - fail fast if not connected
+    if (!_isConnected) {
+      debugPrint('MongoDBService: Not connected, skipping deleteGroup');
+      throw Exception('Not connected to MongoDB');
+    }
+
     final groups = collection(groupsCollection);
     if (groups == null) throw Exception('Failed to access groups collection');
     await groups.remove(where.eq('id', groupId));
@@ -400,5 +548,15 @@ class MongoDBService {
     return {
       for (var user in result) user['uid'] as String: user['name'] as String,
     };
+  }
+
+  // Non-blocking background connection
+  void _connectInBackground() {
+    if (_isConnected || !_isOnline) return;
+
+    // Connect in background without blocking
+    connect().catchError((error) {
+      debugPrint('Background connection failed: $error');
+    });
   }
 }

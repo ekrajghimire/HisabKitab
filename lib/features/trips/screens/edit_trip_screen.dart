@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import '../../../models/trip_model.dart';
-import '../providers/trips_provider.dart';
+import '../../groups/providers/trips_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../models/user_model.dart';
 import '../../../core/constants/currency_constants.dart';
@@ -88,8 +88,6 @@ class _EditTripScreenState extends State<EditTripScreen> {
   }
 
   Future<void> _addParticipant() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     final result = await showDialog<UserModel>(
       context: context,
       builder:

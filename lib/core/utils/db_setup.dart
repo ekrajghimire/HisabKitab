@@ -19,7 +19,7 @@ class DbSetup {
     final tripsRef = _firestore.collection('trips');
     final snapshot = await tripsRef.get();
 
-    print('Deleting existing trips...');
+    debugPrint('Deleting existing trips...');
 
     final batch = _firestore.batch();
     for (var doc in snapshot.docs) {
@@ -28,9 +28,9 @@ class DbSetup {
 
     if (snapshot.docs.isNotEmpty) {
       await batch.commit();
-      print('Deleted ${snapshot.docs.length} trip documents');
+      debugPrint('Deleted ${snapshot.docs.length} trip documents');
     } else {
-      print('No existing trip documents found');
+      debugPrint('No existing trip documents found');
     }
   }
 
@@ -58,7 +58,7 @@ class DbSetup {
     };
 
     await tripsRef.add(sampleTrip);
-    print('Created sample trip document');
+    debugPrint('Created sample trip document');
   }
 
   // Reset and set up trips collection
@@ -69,9 +69,9 @@ class DbSetup {
     try {
       await clearTripsCollection();
       await setupTripsCollection(userId, groupId);
-      print('Trip collection setup completed successfully');
+      debugPrint('Trip collection setup completed successfully');
     } catch (e) {
-      print('Error setting up trips collection: $e');
+      debugPrint('Error setting up trips collection: $e');
       rethrow;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/app_constants.dart';
 import '../../models/user_model.dart';
 
@@ -39,7 +40,7 @@ class UserService {
         return userData;
       }
     } catch (e) {
-      print('Error fetching user data: $e');
+      debugPrint('Error fetching user data: $e');
     }
 
     return null;
@@ -77,7 +78,7 @@ class UserService {
         _userCache[doc.id] = userData; // Update cache
       }
     } catch (e) {
-      print('Error fetching multiple users: $e');
+      debugPrint('Error fetching multiple users: $e');
     }
 
     return users;
@@ -95,7 +96,7 @@ class UserService {
       _userCache[user.uid] = user;
       return true;
     } catch (e) {
-      print('Error updating user data: $e');
+      debugPrint('Error updating user data: $e');
       return false;
     }
   }

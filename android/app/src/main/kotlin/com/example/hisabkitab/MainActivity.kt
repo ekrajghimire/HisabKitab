@@ -1,4 +1,4 @@
-package com.example.hisabkitab
+package com.ekrajg.hisabkitab
 
 import io.flutter.embedding.android.FlutterActivity
 

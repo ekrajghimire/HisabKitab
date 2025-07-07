@@ -82,5 +82,5 @@ class AppConstants {
   static const String appStoreLink =
       'https://apps.apple.com/app/hisabkitab/id123456789';
   static const String playStoreLink =
-      'https://play.google.com/store/apps/details?id=com.example.hisabkitab';
+      'https://play.google.com/store/apps/details?id=com.ekrajg.hisabkitab';
 }

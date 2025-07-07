@@ -68,7 +68,7 @@ Future<void> main() async {
     );
   } catch (e) {
     // Fall back to a basic app in case Firebase fails to initialize
-    print('Error initializing Firebase: $e');
+    debugPrint('Error initializing Firebase: $e');
     runApp(
       MaterialApp(
         title: AppConstants.appName,

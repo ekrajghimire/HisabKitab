@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../../core/services/mongo_db_service.dart';
+import '../../../core/services/local_storage_service.dart';
+import '../../../core/services/firebase_service.dart';
+import '../../../models/user_model.dart';
+import '../../../models/trip_model.dart';
+import '../../../models/expense_model.dart';
 
 class SyncStatus {
   final bool isComplete;
   final String message;
+  final String? details;
   final bool success;
   final double progress;
 
   SyncStatus({
     required this.isComplete,
     required this.message,
+    this.details,
     required this.success,
     required this.progress,
   });
@@ -48,6 +55,16 @@ class DualStorageService {
       );
       await _mongoDb.connect();
 
+      // Get current user
+      final firebaseService = await FirebaseService.instance;
+      final currentUser = firebaseService.currentUser;
+      if (currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Get last sync timestamp
+      final lastSync = await LocalStorageService.getLastSyncTimestamp();
+
       // Sync users
       yield SyncStatus(
         isComplete: false,
@@ -55,7 +72,13 @@ class DualStorageService {
         success: true,
         progress: 30,
       );
-      // TODO: Implement user sync
+
+      // Get current user data from MongoDB
+      final userData = await _mongoDb.getUser(currentUser.uid);
+      if (userData != null) {
+        // Save to local storage
+        await LocalStorageService.saveUser(UserModel.fromMap(userData));
+      }
 
       // Sync trips
       yield SyncStatus(
@@ -64,7 +87,25 @@ class DualStorageService {
         success: true,
         progress: 60,
       );
-      // TODO: Implement trip sync
+
+      // Get trips from MongoDB
+      final tripsData = await _mongoDb.getTripsForUser(currentUser.uid);
+
+      // Save each trip to local storage
+      for (final tripData in tripsData) {
+        final trip = TripModel.fromMap(tripData);
+        await LocalStorageService.saveTrip(trip);
+      }
+
+      // Get local trips and sync to MongoDB if newer
+      final localTrips = await LocalStorageService.getAllTrips();
+      for (final localTrip in localTrips) {
+        final shouldSync =
+            lastSync == null || localTrip.updatedAt.isAfter(lastSync);
+        if (shouldSync) {
+          await _mongoDb.saveTrip(localTrip.toMap());
+        }
+      }
 
       // Sync expenses
       yield SyncStatus(
@@ -73,18 +114,46 @@ class DualStorageService {
         success: true,
         progress: 90,
       );
-      // TODO: Implement expense sync
+
+      // For each trip, sync its expenses
+      for (final trip in localTrips) {
+        // Get expenses from MongoDB
+        final expensesData = await _mongoDb.getExpensesForGroup(trip.groupId);
+
+        // Save MongoDB expenses locally
+        for (final expenseData in expensesData) {
+          final expense = ExpenseModel.fromMap(expenseData);
+          await LocalStorageService.saveExpense(expense);
+        }
+
+        // Get local expenses and sync to MongoDB if newer
+        final localExpenses = await LocalStorageService.getExpensesForGroup(
+          trip.groupId,
+        );
+        for (final localExpense in localExpenses) {
+          final shouldSync =
+              lastSync == null || localExpense.updatedAt.isAfter(lastSync);
+          if (shouldSync) {
+            await _mongoDb.saveExpense(localExpense.toMap());
+          }
+        }
+      }
+
+      // Update last sync timestamp
+      await LocalStorageService.updateLastSyncTimestamp();
 
       yield SyncStatus(
         isComplete: true,
         message: 'All data synchronized successfully',
+        details: 'Synced ${localTrips.length} trips and their expenses',
         success: true,
         progress: 100,
       );
     } catch (e) {
       yield SyncStatus(
         isComplete: true,
-        message: 'Sync failed: ${e.toString()}',
+        message: 'Sync failed',
+        details: e.toString(),
         success: false,
         progress: 0,
       );

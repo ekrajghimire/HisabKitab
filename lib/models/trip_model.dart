@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:fixnum/fixnum.dart' show Int64;
 
@@ -86,7 +87,7 @@ class TripModel {
   // Create from Map from Firestore or local storage
   factory TripModel.fromMap(Map<String, dynamic> map) {
     try {
-      print('Creating TripModel from map: $map');
+      debugPrint('Creating TripModel from map: $map');
 
       // Helper function to parse dates from various formats
       DateTime parseDate(dynamic value) {
@@ -122,7 +123,7 @@ class TripModel {
         createdAt = parseDate(map['createdAt']);
         updatedAt = parseDate(map['updatedAt']);
       } catch (e) {
-        print('Error parsing dates: $e');
+        debugPrint('Error parsing dates: $e');
         // Fallback to current time if date parsing fails
         final now = DateTime.now();
         startDate = now;
@@ -136,7 +137,7 @@ class TripModel {
       try {
         members = List<String>.from(map['members'] ?? []);
       } catch (e) {
-        print('Error parsing members: $e');
+        debugPrint('Error parsing members: $e');
         members = [];
       }
 
@@ -155,7 +156,7 @@ class TripModel {
         icon: icon,
       );
     } catch (e) {
-      print('Error creating TripModel: $e');
+      debugPrint('Error creating TripModel: $e');
       rethrow;
     }
   }
